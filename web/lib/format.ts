@@ -51,3 +51,7 @@ export function headline(b: Business, obs: Obligation[]): { tone: Tone; text: st
   if (pct < 100) return { tone: "partial", text: `Partly protected: ${bond} bonded covers ${pct}% of prepayments.` };
   return { tone: "protected", text: `Protected: ${bond} bonded covers ${pct}% of prepayments.` };
 }
+
+export function day(ns: string): string {
+  return nsToDate(ns).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+}

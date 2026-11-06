@@ -1,91 +1,143 @@
-/* Presafe "civic stub" system: paper, ink, one status color. */
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+    --font-heading: "Instrument Serif", ui-serif, Georgia, serif;
+    --font-mono: var(--font-geist-mono);
+    --font-sans: var(--font-geist-sans);
+    --color-paper: var(--paper);
+    --color-ticket: var(--ticket);
+    --color-ink: var(--ink);
+    --color-rule: var(--rule);
+    --color-protected: var(--protected);
+    --color-partial: var(--partial);
+    --color-claims: var(--claims);
+    --color-sidebar-ring: var(--sidebar-ring);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar: var(--sidebar);
+    --color-chart-5: var(--chart-5);
+    --color-chart-4: var(--chart-4);
+    --color-chart-3: var(--chart-3);
+    --color-chart-2: var(--chart-2);
+    --color-chart-1: var(--chart-1);
+    --color-ring: var(--ring);
+    --color-input: var(--input);
+    --color-border: var(--border);
+    --color-destructive: var(--destructive);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-accent: var(--accent);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-muted: var(--muted);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-secondary: var(--secondary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-primary: var(--primary);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-popover: var(--popover);
+    --color-card-foreground: var(--card-foreground);
+    --color-card: var(--card);
+    --color-foreground: var(--foreground);
+    --color-background: var(--background);
+    --radius-sm: calc(var(--radius) * 0.6);
+    --radius-md: calc(var(--radius) * 0.8);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) * 1.4);
+    --radius-2xl: calc(var(--radius) * 1.8);
+    --radius-3xl: calc(var(--radius) * 2.2);
+    --radius-4xl: calc(var(--radius) * 2.6);
+}
+
 :root {
-  --paper: #f6f3ec;
-  --card: #fffdf8;
-  --ink: #14161a;
-  --muted: #6b6f76;
-  --line: #e3ded3;
-  --protected: #0f7b5f;
-  --partial: #b7791f;
-  --claims: #c2410c;
-  --delivered: #14161a;
-  --radius: 10px;
-  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-  color-scheme: light;
+    --paper: #f4f1ea;
+    --ticket: #fffdf7;
+    --ink: #0e0f11;
+    --rule: #dcd6c9;
+    --protected: #0b6e4f;
+    --partial: #b26b00;
+    --claims: #e5481b;
+    --background: var(--paper);
+    --foreground: var(--ink);
+    --card: var(--ticket);
+    --card-foreground: var(--ink);
+    --popover: var(--ticket);
+    --popover-foreground: var(--ink);
+    --primary: var(--ink);
+    --primary-foreground: var(--paper);
+    --secondary: #e9e4d8;
+    --secondary-foreground: var(--ink);
+    --muted: #e9e4d8;
+    --muted-foreground: #5f6168;
+    --accent: #e9e4d8;
+    --accent-foreground: var(--ink);
+    --destructive: var(--claims);
+    --border: var(--rule);
+    --input: var(--rule);
+    --ring: var(--ink);
+    --chart-1: var(--protected);
+    --chart-2: var(--partial);
+    --chart-3: var(--claims);
+    --chart-4: #5f6168;
+    --chart-5: var(--ink);
+    --radius: 0.5rem;
+    --sidebar: var(--paper);
+    --sidebar-foreground: var(--ink);
+    --sidebar-primary: var(--ink);
+    --sidebar-primary-foreground: var(--paper);
+    --sidebar-accent: var(--muted);
+    --sidebar-accent-foreground: var(--ink);
+    --sidebar-border: var(--rule);
+    --sidebar-ring: var(--ink);
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper: #111315;
-    --card: #181b1e;
-    --ink: #f2efe8;
-    --muted: #9a9ea5;
-    --line: #2a2e33;
-    --protected: #2fa784;
-    --partial: #d69a3c;
-    --claims: #e2622b;
-    --delivered: #f2efe8;
-    color-scheme: dark;
-  }
+
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    }
+  body {
+    @apply bg-background text-foreground;
+    }
+  html {
+    @apply font-sans;
+    }
 }
-* { box-sizing: border-box; }
-html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); line-height: 1.5; }
-a { color: inherit; text-underline-offset: 3px; }
-.mono { font-family: var(--mono); }
-.muted { color: var(--muted); }
-.wrap { max-width: 880px; margin: 0 auto; padding: 0 16px; }
-
-header.site { border-bottom: 1px solid var(--line); }
-header.site .wrap { display: flex; align-items: center; justify-content: space-between; height: 60px; }
-.wordmark { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 20px; letter-spacing: -0.02em; text-decoration: none; }
-nav a { margin-left: 18px; color: var(--muted); text-decoration: none; font-size: 15px; }
-nav a:hover { color: var(--ink); }
-.netpill { font-family: var(--mono); font-size: 12px; border: 1px solid var(--line); border-radius: 99px; padding: 2px 8px; color: var(--muted); }
-
-footer.site { border-top: 1px solid var(--line); margin-top: 64px; padding: 24px 0; font-size: 14px; color: var(--muted); }
-
-h1 { font-size: clamp(32px, 6vw, 52px); line-height: 1.08; letter-spacing: -0.025em; margin: 0 0 16px; }
-h2 { font-size: 22px; letter-spacing: -0.01em; margin: 40px 0 12px; }
-.lede { font-size: 19px; color: var(--muted); max-width: 40em; }
-
-.btn { display: inline-block; padding: 11px 18px; border-radius: 8px; font-weight: 600; text-decoration: none; border: 1.5px solid var(--ink); }
-.btn.primary { background: var(--ink); color: var(--paper); }
-.btn + .btn { margin-left: 10px; }
-
-/* Status headline: the one sentence a judge reads first. */
-.headline { display: flex; gap: 14px; align-items: flex-start; padding: 18px 20px; border-radius: var(--radius); background: var(--card); border: 1px solid var(--line); border-left: 6px solid var(--tone); }
-.headline p { margin: 0; font-size: 20px; font-weight: 600; }
+/* ---------- Presafe ticket system ---------- */
+.label { font-family: var(--font-geist-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted-foreground); }
 .tone-protected { --tone: var(--protected); }
 .tone-partial { --tone: var(--partial); }
 .tone-claims { --tone: var(--claims); }
-.tone-delivered, .tone-neutral { --tone: var(--delivered); }
-.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--tone); display: inline-block; flex: none; margin-top: 9px; }
+.tone-delivered, .tone-neutral { --tone: var(--ink); }
 
-.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 16px 0; }
-.stat { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; }
-.stat .k { font-size: 13px; color: var(--muted); }
-.stat .v { font-family: var(--mono); font-size: 20px; }
-
-/* Obligation card styled as a stub: perforated divider between details and coverage. */
-.stub { display: grid; grid-template-columns: 1fr auto; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 12px; position: relative; }
-.stub .main { padding: 16px 18px; }
-.stub .side { padding: 16px 18px; border-left: 2px dashed var(--line); min-width: 150px; text-align: right; }
-.stub h3 { margin: 0 0 6px; font-size: 17px; }
-.stub .pct { font-family: var(--mono); font-size: 30px; color: var(--tone); line-height: 1.1; }
-.badge-status { display: inline-block; font-size: 13px; font-weight: 600; color: var(--tone); }
-.timeline { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--muted); margin-top: 8px; }
-@media (max-width: 560px) {
-  .stub { grid-template-columns: 1fr; }
-  .stub .side { border-left: 0; border-top: 2px dashed var(--line); text-align: left; }
+/* Die-cut notches at the perforation (x = --cut from the left) using a radial-gradient mask. */
+.ticket {
+  --cut: 72%;
+  background: var(--ticket);
+  -webkit-mask: radial-gradient(circle 11px at var(--cut) 0, #0000 98%, #000) top / 100% 51% no-repeat,
+                radial-gradient(circle 11px at var(--cut) 100%, #0000 98%, #000) bottom / 100% 51% no-repeat;
+          mask: radial-gradient(circle 11px at var(--cut) 0, #0000 98%, #000) top / 100% 51% no-repeat,
+                radial-gradient(circle 11px at var(--cut) 100%, #0000 98%, #000) bottom / 100% 51% no-repeat;
 }
-
-.hero { display: grid; grid-template-columns: 1.2fr 1fr; gap: 32px; align-items: center; padding: 56px 0 24px; }
-@media (max-width: 760px) { .hero { grid-template-columns: 1fr; } }
-.hero .live { text-decoration: none; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
-.hero .live img { width: 100%; height: auto; display: block; }
-.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-@media (max-width: 640px) { .steps { grid-template-columns: 1fr; } }
-.steps .stub { display: block; padding: 16px 18px; margin: 0; }
-.proof { font-size: 17px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 18px 0; margin: 32px 0; }
-.proof b { font-family: var(--mono); font-size: 22px; }
-.embed { font-family: var(--mono); font-size: 12px; background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 10px; overflow-x: auto; white-space: pre; }
+.ticket-shadow { filter: drop-shadow(0 1px 0 rgba(14,15,17,.08)) drop-shadow(0 18px 30px rgba(14,15,17,.12)); }
+.perf { background-image: linear-gradient(var(--rule) 50%, transparent 50%); background-size: 2px 8px; width: 2px; }
+.barcode {
+  background: repeating-linear-gradient(90deg, var(--ink) 0 2px, transparent 2px 4px, var(--ink) 4px 5px, transparent 5px 8px, var(--ink) 8px 11px, transparent 11px 12px, var(--ink) 12px 13px, transparent 13px 16px);
+}
+.vertical { writing-mode: vertical-rl; transform: rotate(180deg); }
+.stamp {
+  border: 2.5px solid var(--tone); color: var(--tone); border-radius: 6px; padding: 4px 10px;
+  font-family: var(--font-geist-mono); font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+  transform: rotate(-9deg); mix-blend-mode: multiply; opacity: .9;
+  mask-image: radial-gradient(circle at 30% 40%, #000 60%, #000c 75%, #0008 100%);
+}
+/* Printer slot: the ticket slides out on load. */
+@keyframes print { from { transform: translateY(-62%); } to { transform: translateY(0); } }
+.printing { animation: print 1.1s cubic-bezier(.2,.8,.2,1) .2s both; }
+@media (prefers-reduced-motion: reduce) { .printing { animation: none; } }

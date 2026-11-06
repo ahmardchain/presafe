@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
+import "@fontsource/instrument-serif/400.css";
+import "@fontsource/instrument-serif/400-italic.css";
 import "./globals.css";
-import { Wordmark } from "@/components/Stub";
+import { cn } from "@/lib/utils";
+import { StubMark } from "@/components/Stub";
 import { NETWORK, PRESAFE_CONTRACT, explorerAccount } from "@/lib/config";
 
 export const metadata: Metadata = {
@@ -11,37 +16,29 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap"
-        />
-      </head>
-      <body>
-        <header className="site">
-          <div className="wrap">
-            <Link href="/" style={{ textDecoration: "none" }}>
-              <Wordmark />
-            </Link>
-            <nav>
-              <span className="netpill">{NETWORK}</span>
-              <Link href="/claims">Claims</Link>
-              <Link href="/business">For businesses</Link>
-            </nav>
-          </div>
+    <html lang="en" className={cn(GeistSans.variable, GeistMono.variable, "font-sans antialiased")}>
+      <body className="bg-paper text-ink min-h-screen">
+        <header className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
+          <Link href="/" className="flex items-center gap-2 text-[19px] font-semibold tracking-tight">
+            <StubMark size={26} />
+            presafe
+          </Link>
+          <nav className="flex items-center gap-5 text-sm text-muted-foreground">
+            <span className="label rounded-full border border-rule px-2 py-0.5">{NETWORK}</span>
+            <Link className="hover:text-ink hidden sm:inline" href="/claims">Claims</Link>
+            <Link className="hover:text-ink" href="/business">For businesses</Link>
+          </nav>
         </header>
-        <main className="wrap">{children}</main>
-        <footer className="site">
-          <div className="wrap">
+        <main>{children}</main>
+        <footer className="mx-auto mt-24 flex max-w-6xl flex-wrap justify-between gap-2 border-t border-rule px-4 py-8 text-sm text-muted-foreground sm:px-6">
+          <span>
             Contract{" "}
-            <a className="mono" href={explorerAccount(PRESAFE_CONTRACT)}>
+            <a className="font-mono underline underline-offset-4" href={explorerAccount(PRESAFE_CONTRACT)}>
               {PRESAFE_CONTRACT}
             </a>{" "}
-            on NEAR {NETWORK}. Built at NEAR HACKATHON. MIT licensed.
-          </div>
+            on NEAR {NETWORK}
+          </span>
+          <span>Built at NEAR HACKATHON · MIT</span>
         </footer>
       </body>
     </html>
