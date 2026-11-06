@@ -1,0 +1,16 @@
+# Secrets
+.env*
+!.env.example
+
+# Rust
+target/
+
+# Node
+node_modules/
+.next/
+out/
+*.log
+
+# Local keys and spike state
+*.key.json
+spike/**/state/
