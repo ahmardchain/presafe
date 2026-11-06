@@ -17,3 +17,7 @@ spike/**/state/
 
 # Testnet deploy keys
 scripts/state/
+
+# Next.js
+web/next-env.d.ts
+*.tsbuildinfo
