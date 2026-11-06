@@ -69,7 +69,7 @@ flowchart LR
 
 ## Contract rules
 
-_The contract is not built yet. This table is the specification it will be tested against._
+Source: [`contract/presafe/src/lib.rs`](contract/presafe/src/lib.rs). Payments arrive through `ft_transfer_call` with `msg` `{"action":"pay","obligation_id":N}`, optionally with `"payer":"<account>"` so that a third party (such as a 1Click `customRecipientMsg` delivery) can pay on a customer's behalf. Bond funding uses `{"action":"fund_bond"}`.
 
 | Action | Who | When | Effect |
 | --- | --- | --- | --- |
@@ -81,20 +81,29 @@ _The contract is not built yet. This table is the specification it will be teste
 | `resolve` | Arbiter | `Disputed` | Sets `Delivered` or `Defaulted`. |
 | `trigger_default` | Anyone | `deliver_by` + grace passed and not marked delivered | Sets `Defaulted`. |
 | `claim` | Receipt holder | `Defaulted` | Pays `min(receipt amount, pro-rata share of reserved bond)`. Each receipt can be claimed once. |
-| Release | Business | `Delivered` and the challenge window closed with no successful dispute | Reserved bond unlocks back to the business. |
+| `release` | Anyone | Marked delivered and the challenge window closed with no successful dispute | Status becomes `Delivered`; the reserve unlocks back to the business. |
+| `declare_default` | Business or arbiter | Not yet settled | Sets `Defaulted` (a business can admit non-delivery early). |
+| `add_reserve` | Business | `Open` | Moves more unlocked bond into the reserve. |
 | `withdraw_bond` | Business | Any time | Withdraws unlocked bond only. |
 
 Coverage ratio = reserved bond / total covered prepayments. Payments are not blocked when coverage is below 100%; the ratio is shown before paying.
 
 ## Local setup
 
-_TBD._ Planned layout:
-
 ```
-contract/   Rust contract (near-sdk), unit and sandbox integration tests
-relayer/    Meta transaction relayer, restricted to the Presafe contract
-web/        Next.js app (badge, business, pay, claims pages)
-spike/      Day-1 experiment: 1Click delivery into a contract (not part of the product)
+contract/presafe/            Presafe contract (Rust, near-sdk 5.30.1)
+contract/mock-ft/            Testnet-only mock USDC (NEP-141, 6 decimals, capped open mint)
+contract/integration-tests/  near-sandbox integration tests
+scripts/testnet/             Deploy and seed scripts for NEAR testnet (print a plan; sign only with --execute)
+relayer/                     Meta transaction relayer, restricted to the Presafe contract (TBD)
+web/                         Next.js app: badge, business, pay, claims pages (TBD)
+spike/                       Day-1 experiment: 1Click delivery into a contract (not part of the product)
+```
+
+Requirements: Rust with the `wasm32-unknown-unknown` target, [`cargo-near`](https://github.com/near/cargo-near) 0.23.0, Node.js 22.
+
+```bash
+cargo install cargo-near --version 0.23.0 --locked   # Linux needs libudev-dev and pkg-config
 ```
 
 ## Environment variables
@@ -110,7 +119,20 @@ See [`.env.example`](.env.example). Real values go in `.env`, which is git-ignor
 
 ## Tests
 
-_TBD._
+```bash
+contract/run-tests.sh
+```
+
+This builds both contracts, runs the unit tests (34 for Presafe, 3 for the mock token), then runs 4 integration tests on a local NEAR sandbox with real cross-contract calls:
+
+| Test | What it checks |
+| --- | --- |
+| `pay_default_and_gasless_claim` | Bond funding, payment forwarded to the business at once, coverage ratio, early default refused, default after grace, excess reserve unlocked, a claim relayed as a meta transaction (the claimant's NEAR balance does not change), double claim refused. |
+| `wrong_token_and_bad_msg_are_refunded` | Another NEP-141 token and an unparseable `msg` are returned to the sender. |
+| `named_payer_gets_the_receipt` | A third party pays with `"payer"` in the msg (the 1Click delivery shape); the receipt belongs to the named payer. |
+| `delivered_release_and_withdraw` | Locked bond cannot be withdrawn; mark delivered, release after the challenge window, withdraw. |
+
+The sandbox node requires an open-files limit of 65535. Where a container caps it lower, `run-tests.sh` preloads a small test-only shim ([`fdlimit_shim.c`](contract/integration-tests/fdlimit-shim/fdlimit_shim.c)); on a normal machine it is not used.
 
 ## Spike: 1Click into the contract
 
@@ -132,6 +154,8 @@ _In progress._ The question: can USDC delivered by 1Click arrive in the Presafe 
 - **Arbiter trust.** A disputed delivery is settled by an arbiter account (by default one run by Presafe). Customers trust that arbiter.
 - **Non-event obligations.** The default rule is date-based. Services without a clear delivery date need a different claim rule.
 - **Coverage below 100%.** If the bond is smaller than the covered prepayments, each claim is paid pro rata and customers recover only part of their money.
+- **Named payer is not verified.** When `msg` names a payer, the contract records the receipt for that account without proof that it funded the payment. Anyone can create a receipt this way, but only by paying the business real USDC, so it cannot be used to drain a bond for free; it can dilute other customers' pro-rata share if the bond is smaller than covered payments.
+- **Pro-rata dust and unclaimed reserve.** After a default, reserve that is never claimed (or rounding remainders) stays locked; there is no sweep yet.
 - **No Intents testnet.** The contract flow runs on testnet; the 1Click leg can only be shown on mainnet with small amounts.
 
 ## License
