@@ -1,0 +1,16 @@
+[package]
+name = "presafe"
+version = "0.1.0"
+edition = "2021"
+description = "Presafe: public prepayment-protection bonds in USDC on NEAR."
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+near-sdk = { workspace = true }
+near-contract-standards = { workspace = true }
+
+[dev-dependencies]
+near-sdk = { workspace = true, features = ["unit-testing"] }
