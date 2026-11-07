@@ -47,7 +47,7 @@ After the claim, the customer held 2.00 test USDC and their NEAR balance was sti
 
 ## Demo video
 
-A 1:30 narrated walkthrough recorded on the live site: problem, badge, pay, missed deadline, gasless claim. _Link to the X post added once it is published._ The video is reproducible: [`scripts/video/record.js`](scripts/video/record.js) records it with Playwright and [`scripts/video/voiceover.py`](scripts/video/voiceover.py) adds the narration.
+A 1:35 narrated walkthrough: the problem and the fix as a short animation, then the live site: badge, pay, missed deadline, gasless claim. _Link to the X post added once it is published._
 
 ## How NEAR is used
 
@@ -140,7 +140,6 @@ contract/integration-tests/  near-sandbox integration tests
 web/                         Next.js app: landing, badge, pay, claims and business pages,
                              relayer (/api/relay), onboarding (/api/onboard), 1Click quotes (/api/quote)
 scripts/testnet/             Deploy and seed scripts for NEAR testnet (print a plan; sign only with --execute)
-scripts/video/               Demo video recording (Playwright) and voiceover pipeline
 spike/                       Mainnet 1Click experiment: recorder contract and scripts (not part of the product)
 ```
 
@@ -249,7 +248,7 @@ Design consequence: a customer on another chain pays Presafe in one step. The 1C
 
 - **All code in this repository was written during NEAR HACKATHON** (the window opened 2026-10-19). No code is reused from the author's earlier projects, including the "Climb" escrow contract on Arc.
 - **Other hackathon entries:** Presafe is the author's only NEAR HACKATHON entry.
-- **AI assistance:** built with Claude Code. The demo video's narration is synthetic (Google Translate's voice via gTTS).
+- **AI assistance:** built with Claude Code. The demo video's narration is AI-generated.
 - **Libraries, templates and assets** (all versions pinned):
 
 | Library | Version | Used for |
@@ -268,8 +267,6 @@ Design consequence: a customer on another chain pays Presafe in one step. The 1C
 | geist, @fontsource/instrument-serif | 1.9.2, 5.3.0 | Fonts (OFL) |
 | @opennextjs/cloudflare, wrangler | 1.20.16, 4.158.0 | Cloudflare Workers deployment |
 | dotenv | 17.2.3 | Spike scripts |
-| Playwright | 1.63.0 | Demo video recording |
-| gTTS | 2.5.4 | Demo video narration |
 
 ## Known limitations
 
