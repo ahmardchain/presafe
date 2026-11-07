@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Ticket } from "@/components/Ticket";
 import { PayPanel } from "@/components/pay/PayPanel";
+import { AnyChainPanel } from "@/components/pay/AnyChainPanel";
 import { amount, coveragePct, day, obligationTone, statusLabel } from "@/lib/format";
 import { getBusiness, view, type Obligation } from "@/lib/near";
 import { stubWord } from "@/lib/summary";
@@ -47,6 +48,7 @@ export default async function PayPage({ params }: { params: Promise<{ obligation
         </div>
         <div className="md:pt-3">
           <PayPanel obligationId={o.id} businessName={b.name} reserve={o.reserve} coveredTotal={o.covered_total} open={open} />
+          {open && <AnyChainPanel obligationId={o.id} />}
         </div>
       </div>
     </div>

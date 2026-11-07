@@ -40,7 +40,7 @@ After the claim, the customer held 2.00 test USDC and their NEAR balance was sti
 | NEAR feature | What Presafe does with it |
 | --- | --- |
 | NEP-141 fungible tokens (USDC) | Bonds and payments are stablecoin transfers into the Presafe contract through `ft_transfer_call`. Mainnet USDC is `17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1`; testnet uses a mock NEP-141 token. |
-| NEAR Intents (1Click API) | A customer pays, or a business funds its bond, from another chain and token. 1Click swaps it into USDC on NEAR. _Delivery design: see [Spike: 1Click into the contract](#spike-1click-into-the-contract)._ |
+| NEAR Intents (1Click API) | A customer pays from another chain (USDC on Base, Arbitrum, Ethereum or Solana, or USDT on NEAR). 1Click swaps it to USDC on NEAR and delivers it into Presafe with `customRecipientMsg`, so it lands as a covered receipt in one step. Verified on mainnet with a real 1.00 USDC payment from Base (see [the spike](#spike-1click-into-the-contract-mainnet-result)). On the testnet demo the pay page shows a live `dry: true` quote for the chosen chain, since Intents has no testnet. |
 | Meta transactions (NEP-366) | Customers pay (testnet), dispute, claim and trigger default by signing a delegate action in the browser; Presafe's self-hosted relayer submits it and pays the gas. The relayer only accepts `claim`, `dispute` and `trigger_default` on the Presafe contract, and `ft_transfer_call` into Presafe (plus the capped test-token `mint` on testnet). |
 | Named accounts | The badge identity is a readable account such as `<business>.near`, shown on the badge page and in the embeddable SVG. |
 
