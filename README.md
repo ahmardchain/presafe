@@ -125,6 +125,32 @@ Requirements: Rust with the `wasm32-unknown-unknown` target, [`cargo-near`](http
 cargo install cargo-near --version 0.23.0 --locked   # Linux needs libudev-dev and pkg-config
 ```
 
+## Deploy (Cloudflare Workers)
+
+The web app deploys to Cloudflare Workers with the [OpenNext adapter](https://developers.cloudflare.com/workers/framework-guides/web-apps/opennext/). Config: [`web/wrangler.jsonc`](web/wrangler.jsonc), [`web/open-next.config.ts`](web/open-next.config.ts).
+
+```bash
+cd web && npm ci
+```
+
+```bash
+npx wrangler login
+```
+
+The relayer needs a funded NEAR testnet account. Its account ID is the `RELAYER_ACCOUNT_ID` var in `wrangler.jsonc`; its private key is a Worker secret:
+
+```bash
+npx wrangler secret put RELAYER_PRIVATE_KEY
+```
+
+```bash
+npm run cf:deploy
+```
+
+Then open `https://presafe.<your-subdomain>.workers.dev/b/lagos-sound-fest.testnet`. Public network config (`NEXT_PUBLIC_*`, see [`web/.env.example`](web/.env.example)) is read at build time and defaults to the live testnet deployment.
+
+The deployed app exposes a testnet-only faucet and relayer (method allowlist plus per-IP rate limits). Do not deploy that configuration against mainnet.
+
 ## Environment variables
 
 See [`.env.example`](.env.example). Real values go in `.env`, which is git-ignored.
