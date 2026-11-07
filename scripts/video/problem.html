@@ -1,0 +1,148 @@
+<!doctype html>
+<!-- Animated "problem" opener for the Presafe demo video (12 s, 1280x720).
+     Original stick-figure character; recorded by scripts/video/record-problem.js. -->
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;600&family=Geist+Mono:wght@500&display=swap');
+:root { --paper:#f4f1ea; --ticket:#fffdf7; --ink:#0e0f11; --rule:#dcd6c9; --green:#0b6e4f; --red:#e5481b; --skin:#8d5524; --muted:#5f6168; }
+* { box-sizing:border-box; }
+html,body { margin:0; width:1280px; height:720px; overflow:hidden; background:var(--paper); font-family:Geist,system-ui,sans-serif; color:var(--ink); }
+.label { position:absolute; left:64px; top:48px; font:500 14px 'Geist Mono',monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); opacity:0; animation:fade .5s .2s forwards; }
+.headline { position:absolute; left:64px; top:76px; font:400 54px/1 'Instrument Serif',Georgia,serif; opacity:0; }
+.h1 { animation:fade .5s .4s forwards, fadeout .4s 4.3s forwards; }
+.h2 { animation:fade .5s 4.6s forwards, fadeout .4s 8.1s forwards; color:var(--red); }
+
+/* Character */
+#guy { position:absolute; left:150px; top:210px; width:330px; height:470px; animation:fade .5s .1s both; }
+.arm-r { transform-origin:165px 215px; animation:tap .35s 1.0s 3 ease-in-out; }
+.mouth-happy { opacity:0; animation:show .01s 2.4s forwards, hide .01s 5.4s forwards; }
+.mouth-flat { animation:hide .01s 2.4s forwards; }
+.mouth-sad { opacity:0; animation:show .01s 5.4s forwards; }
+.brow { opacity:0; animation:show .01s 5.4s forwards; }
+.head { transform-origin:165px 168px; animation:droop .6s 5.5s forwards; }
+.screen-pay { animation:hide .01s 2.0s forwards; }
+.screen-paid { opacity:0; animation:show .01s 2.0s forwards; }
+
+/* Ticket */
+#ticket { position:absolute; left:560px; top:250px; width:420px; height:200px; opacity:0;
+  filter:drop-shadow(0 18px 30px rgba(14,15,17,.14)); animation:fly 0.9s 2.2s cubic-bezier(.2,.8,.2,1) forwards, shake .4s 5.25s; }
+#ticket .body { position:absolute; inset:0; background:var(--ticket); border-radius:8px;
+  -webkit-mask: radial-gradient(circle 12px at 310px 0, #0000 98%, #000) top/100% 51% no-repeat, radial-gradient(circle 12px at 310px 100%, #0000 98%, #000) bottom/100% 51% no-repeat; }
+#ticket .t-eyebrow { position:absolute; left:26px; top:24px; font:500 12px 'Geist Mono',monospace; letter-spacing:.14em; color:var(--muted); }
+#ticket .t-title { position:absolute; left:26px; top:46px; font:400 34px/1.05 'Instrument Serif',serif; }
+#ticket .t-row { position:absolute; left:26px; top:138px; font:500 15px 'Geist Mono',monospace; }
+#ticket .perf { position:absolute; left:309px; top:14px; bottom:14px; border-left:2px dashed var(--rule); }
+#ticket .stub { position:absolute; left:330px; top:30px; font:600 13px 'Geist Mono',monospace; letter-spacing:.3em; writing-mode:vertical-rl; transform:rotate(180deg); color:var(--green); }
+#ticket .barcode { position:absolute; left:368px; top:28px; width:26px; height:144px;
+  background:repeating-linear-gradient(90deg,var(--ink) 0 2px,transparent 2px 4px,var(--ink) 4px 5px,transparent 5px 8px,var(--ink) 8px 11px,transparent 11px 13px); }
+.paid { position:absolute; right:126px; bottom:22px; border:3px solid var(--green); color:var(--green); border-radius:6px; padding:3px 10px;
+  font:600 16px 'Geist Mono',monospace; letter-spacing:.14em; transform:rotate(-8deg); opacity:0; animation:fade .2s 2.9s forwards; }
+.cancel { position:absolute; left:20px; top:62px; border:5px solid var(--red); color:var(--red); border-radius:10px; padding:6px 16px; background:rgba(255,253,247,.6);
+  font:600 34px 'Geist Mono',monospace; letter-spacing:.08em; transform:rotate(-10deg) scale(2.4); opacity:0; animation:slam .35s 5.0s cubic-bezier(.3,1.6,.5,1) forwards; }
+
+/* Calendar */
+#cal { position:absolute; left:1040px; top:160px; width:150px; height:160px; background:var(--ticket); border:2px solid var(--ink); border-radius:10px; overflow:hidden; opacity:0; animation:fade .4s 3.0s forwards; }
+#cal .top { height:36px; background:var(--red); color:#fff; font:600 15px 'Geist Mono',monospace; letter-spacing:.14em; text-align:center; line-height:36px; }
+#cal .day { position:absolute; left:0; right:0; top:44px; text-align:center; font:400 86px/1 'Instrument Serif',serif; opacity:0; }
+#cal .d1 { animation:flip .5s 3.1s both; } #cal .d2 { animation:flip .5s 3.6s both; } #cal .d3 { animation:flip .5s 4.1s both; } #cal .d4 { animation:land .3s 4.6s both; }
+
+/* Money flying away */
+.note { position:absolute; left:760px; top:340px; width:84px; height:44px; background:#7fbf8e; border:2px solid var(--green); border-radius:6px; opacity:0;
+  font:600 20px 'Geist Mono',monospace; color:var(--green); text-align:center; line-height:40px; }
+.n1 { animation:away1 1.6s 6.0s ease-in forwards; } .n2 { animation:away2 1.7s 6.2s ease-in forwards; }
+.n3 { animation:away3 1.5s 6.4s ease-in forwards; } .n4 { animation:away1 1.8s 6.6s ease-in forwards; } .n5 { animation:away2 1.6s 6.8s ease-in forwards; }
+
+/* Data panel */
+#panel { position:absolute; top:0; right:0; bottom:0; width:1280px; background:var(--ink); color:var(--paper); transform:translateX(100%); animation:slidein .7s 8.3s cubic-bezier(.2,.8,.2,1) forwards; }
+#panel .big { position:absolute; left:110px; top:170px; font:400 220px/1 'Instrument Serif',serif; }
+#panel .big span { color:#8c8a85; }
+#panel .cap { position:absolute; left:120px; top:420px; font:400 34px/1.3 Geist,sans-serif; max-width:900px; }
+#panel .cap b { color:#ff9a6b; font-weight:600; }
+#panel .src { position:absolute; left:120px; top:560px; font:500 15px 'Geist Mono',monospace; letter-spacing:.12em; text-transform:uppercase; color:#8c8a85; }
+
+@keyframes fade { to { opacity:1; } } @keyframes fadeout { to { opacity:0; } }
+@keyframes show { to { opacity:1; } } @keyframes hide { to { opacity:0; } }
+@keyframes tap { 50% { transform:rotate(-12deg); } }
+@keyframes droop { to { transform:rotate(6deg) translateY(6px); } }
+@keyframes fly { from { opacity:0; transform:translate(-300px,40px) rotate(-14deg) scale(.4); } to { opacity:1; transform:none; } }
+@keyframes shake { 25% { transform:translateX(-8px); } 50% { transform:translateX(8px); } 75% { transform:translateX(-4px); } }
+@keyframes slam { to { opacity:1; transform:rotate(-10deg) scale(1); } }
+@keyframes flip { 0% { opacity:0; transform:rotateX(90deg); } 30% { opacity:1; transform:none; } 90% { opacity:1; } 100% { opacity:0; } }
+@keyframes land { from { opacity:0; transform:rotateX(90deg); } to { opacity:1; transform:none; } }
+@keyframes away1 { 0% { opacity:1; transform:none; } 100% { opacity:0; transform:translate(520px,-420px) rotate(140deg); } }
+@keyframes away2 { 0% { opacity:1; transform:none; } 100% { opacity:0; transform:translate(600px,-160px) rotate(-120deg); } }
+@keyframes away3 { 0% { opacity:1; transform:none; } 100% { opacity:0; transform:translate(420px,-520px) rotate(200deg); } }
+@keyframes slidein { to { transform:none; } }
+</style>
+</head>
+<body>
+  <div class="label">The problem</div>
+  <div class="headline h1">You pay upfront…</div>
+  <div class="headline h2">…and the event never happens.</div>
+
+  <svg id="guy" viewBox="0 0 330 470" aria-hidden="true">
+    <g fill="none" stroke="#0e0f11" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+      <!-- body and legs -->
+      <line x1="165" y1="172" x2="165" y2="330"/>
+      <line x1="165" y1="330" x2="118" y2="455"/>
+      <line x1="165" y1="330" x2="212" y2="455"/>
+      <!-- left arm -->
+      <polyline points="165,215 118,262 104,320"/>
+    </g>
+    <!-- right arm holding the phone (taps) -->
+    <g class="arm-r">
+      <polyline points="165,215 214,252 232,236" fill="none" stroke="#0e0f11" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="216" y="170" width="54" height="94" rx="9" fill="#0e0f11"/>
+      <rect class="screen-pay" x="222" y="179" width="42" height="76" rx="4" fill="#fffdf7"/>
+      <text class="screen-pay" x="243" y="206" font-family="Geist Mono, monospace" font-size="11" fill="#0e0f11" text-anchor="middle">$120</text>
+      <rect class="screen-pay" x="227" y="224" width="32" height="18" rx="4" fill="#0e0f11"/>
+      <text class="screen-pay" x="243" y="237" font-family="Geist Mono, monospace" font-size="10" fill="#f4f1ea" text-anchor="middle">PAY</text>
+      <rect class="screen-paid" x="222" y="179" width="42" height="76" rx="4" fill="#0b6e4f"/>
+      <path class="screen-paid" d="M232 216 l8 8 l15 -17" fill="none" stroke="#fffdf7" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <!-- head -->
+    <g class="head">
+      <circle cx="165" cy="112" r="56" fill="#fffdf7" stroke="#0e0f11" stroke-width="7"/>
+      <circle cx="145" cy="108" r="6" fill="#0e0f11"/>
+      <circle cx="185" cy="108" r="6" fill="#0e0f11"/>
+      <path class="brow" d="M131 92 L155 84 M199 92 L175 84" stroke="#0e0f11" stroke-width="5" stroke-linecap="round"/>
+      <path class="mouth-flat" d="M150 140 L180 140" stroke="#0e0f11" stroke-width="5" stroke-linecap="round"/>
+      <path class="mouth-happy" d="M143 134 Q165 158 187 134" fill="none" stroke="#0e0f11" stroke-width="5" stroke-linecap="round"/>
+      <path class="mouth-sad" d="M145 150 Q165 128 185 150" fill="none" stroke="#0e0f11" stroke-width="5" stroke-linecap="round"/>
+    </g>
+  </svg>
+
+  <div id="cal"><div class="top">DECEMBER</div><div class="day d1">9</div><div class="day d2">10</div><div class="day d3">11</div><div class="day d4">12</div></div>
+
+  <div id="ticket">
+    <div class="body"></div>
+    <div class="t-eyebrow">ADMIT ONE · FESTIVAL</div>
+    <div class="t-title">Summer Sound<br>Festival</div>
+    <div class="t-row">DEC 12 · $120</div>
+    <div class="perf"></div>
+    <div class="stub">TICKET</div>
+    <div class="barcode"></div>
+    <div class="paid">PAID</div>
+    <div class="cancel">EVENT CANCELLED</div>
+  </div>
+
+  <div class="note n1">$</div><div class="note n2">$</div><div class="note n3">$</div><div class="note n4">$</div><div class="note n5">$</div>
+
+  <div id="panel">
+    <div class="big"><span id="n">0</span><span>/521</span></div>
+    <div class="cap">ticket buyers got refunds when New York's Evolutions Festival was cancelled. <b>Everyone else: an unsecured creditor.</b></div>
+    <div class="src">FingerLakes1 · Sep 30, 2026</div>
+  </div>
+
+<script>
+  // Count 0 -> 11 once the panel is in.
+  setTimeout(() => {
+    const el = document.getElementById('n'); let v = 0;
+    el.style.color = '#f4f1ea';
+    const t = setInterval(() => { v += 1; el.textContent = v; if (v >= 11) clearInterval(t); }, 70);
+  }, 9100);
+</script>
+</body>
+</html>

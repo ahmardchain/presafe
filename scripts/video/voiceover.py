@@ -14,7 +14,13 @@ Engines:
   --engine gtts: Google Translate's voice via the gTTS library, no API key (pip install gTTS==2.5.4);
                  --tld picks the accent (com = US, co.uk = UK, com.ng = Nigeria, ...).
 
-Usage: voiceover.py <silent video> <out.mp4> [--engine google|gtts] [--voice en-US-Chirp3-HD-Charon] [--tld com] [--dry]
+  --pitch F: shift the voice's pitch by factor F with ffmpeg's rubberband filter (formants shifted
+             too), e.g. 0.72 turns gTTS's ~195 Hz voice into a ~140 Hz male-range voice.
+  --scenes a,b,...: scene boundaries in seconds when the video differs from the default cut
+             (one more value than there are lines).
+
+Usage: voiceover.py <silent video> <out.mp4> [--engine google|gtts] [--voice en-US-Chirp3-HD-Charon] [--tld com]
+                    [--pitch 0.72] [--scenes 0,12.1,...] [--dry]
 """
 import base64, json, os, subprocess, sys, urllib.request
 
@@ -68,13 +74,20 @@ def main():
     voice = args[args.index("--voice") + 1] if "--voice" in args else "en-US-Chirp3-HD-Charon"
     engine = args[args.index("--engine") + 1] if "--engine" in args else "google"
     tld = args[args.index("--tld") + 1] if "--tld" in args else "com"
-    tag = f"gtts-{tld}" if engine == "gtts" else voice
+    pitch = float(args[args.index("--pitch") + 1]) if "--pitch" in args else None
+    scenes = [float(x) for x in args[args.index("--scenes") + 1].split(",")] if "--scenes" in args else SCENES
+    assert len(scenes) == len(LINES) + 1, "need one scene boundary more than there are lines"
+    tag = (f"gtts-{tld}" if engine == "gtts" else voice) + (f"-p{pitch}" if pitch else "")
     work = os.path.join(os.path.dirname(os.path.abspath(out)), f"vo_work_{tag}"); os.makedirs(work, exist_ok=True)
     clips = []
     for i, text in enumerate(LINES):
         p = os.path.join(work, f"line{i+1}.wav")
         if not os.path.exists(p):
-            synth_gtts(text, tld, p) if engine == "gtts" else synth(text, voice, p)
+            raw = p[:-4] + ".raw.wav" if pitch else p
+            synth_gtts(text, tld, raw) if engine == "gtts" else synth(text, voice, raw)
+            if pitch:
+                sh("ffmpeg", "-y", "-loglevel", "error", "-i", raw, "-af",
+                   f"rubberband=pitch={pitch}:formant=shifted:pitchq=quality", "-ar", "48000", p)
         clips.append((p, duration(p)))
         print(f"line {i+1}: {clips[-1][1]:.2f}s")
     if "--dry" in args:
@@ -82,7 +95,7 @@ def main():
     # Build per-scene video pieces and the audio timeline.
     vparts, delays, t = [], [], 0.0
     for i, (clip, adur) in enumerate(clips):
-        s, e = SCENES[i], SCENES[i + 1]
+        s, e = scenes[i], scenes[i + 1]
         vdur = e - s
         need = LEAD + adur + TAIL + (1.0 if i == len(clips) - 1 else 0.0)
         if need >= vdur:          # voice is longer: keep footage, hold the last frame
