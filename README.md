@@ -31,7 +31,7 @@ Transactions from a run on the live app on 2026-11-07 (obligation #7, customer `
 | Customer pays with protection (relayed) | testnet | [BxXLLBy…](https://testnet.nearblocks.io/txns/BxXLLByZbBsSH8uGNM1TVXRJoMfUfnCV7pRxe1bhBDCh) |
 | Default triggered after the deadline (relayed) | testnet | [4TaLEWL…](https://testnet.nearblocks.io/txns/4TaLEWLu12rsxTqPqUNgdnNbnnpMsMBk9acKfwLSQ3KD) |
 | Gasless claim (meta transaction) | testnet | [5RpNDfE…](https://testnet.nearblocks.io/txns/5RpNDfE2D8wjtvPQyh6GQrLJGqKQ789UzbXwXENKYGv) |
-| Any-chain pay-in through 1Click | mainnet | _TBD (mainnet test scheduled by 2026-11-10)_ |
+| Any-chain pay-in through 1Click (spike: 1.00 USDC on Base delivered with `customRecipientMsg`) | mainnet | [94gPxba…](https://nearblocks.io/txns/94gPxbaXa8cs4noBg1XvRNZF84TSi1HDJ3G1UVziCCSg) |
 
 After the claim, the customer held 2.00 test USDC and their NEAR balance was still the 0.01 they were onboarded with.
 
@@ -184,9 +184,22 @@ This builds both contracts, runs the unit tests (34 for Presafe, 3 for the mock 
 
 The sandbox node requires an open-files limit of 65535. Where a container caps it lower, `run-tests.sh` preloads a small test-only shim ([`fdlimit_shim.c`](contract/integration-tests/fdlimit-shim/fdlimit_shim.c)); on a normal machine it is not used.
 
-## Spike: 1Click into the contract
+## Spike: 1Click into the contract (mainnet result)
 
-_In progress._ The question: can USDC delivered by 1Click arrive in the Presafe contract already tied to a specific obligation? The 1Click quote API has an experimental `customRecipientMsg` field that delivers through `ft_transfer_call` instead of `ft_transfer`. The spike tests it with a $1 mainnet payment into a throwaway contract that only records what it receives. Results and the chosen design go here.
+Question: can USDC delivered by NEAR Intents 1Click arrive in a contract already tied to a specific obligation and customer?
+
+On 2026-11-07 we paid 1.00 USDC on Base through a 1Click quote with `customRecipientMsg` set, delivering to a throwaway recorder contract on mainnet ([`spike/recorder`](spike/recorder/src/lib.rs)) that logs what `ft_on_transfer` receives:
+
+| Field seen by `ft_on_transfer` | Value |
+| --- | --- |
+| `msg` | `{"action":"pay","obligation_id":"spike-1","payer":"ahmardchain.near"}`, delivered unchanged |
+| `sender_id` | `intents.near` (not the customer) |
+| `predecessor_id` | `17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1` (native USDC) |
+| `amount` | 999798 (0.999798 USDC; nothing refunded) |
+
+Deposit to `SUCCESS` took about 30 seconds. Base deposit `0x8c908afcb96b1267cd78a4092cd4f23863fcb6b54ed38486f5e6794041536af3`; NEAR delivery [`94gPxba…`](https://nearblocks.io/txns/94gPxbaXa8cs4noBg1XvRNZF84TSi1HDJ3G1UVziCCSg); recorder deploy [`71tuSGX…`](https://nearblocks.io/txns/71tuSGX3tthDFhKta8vZ9YKWFpzdcFLgo2sbUi7ysT6E).
+
+Design consequence: a customer on another chain pays Presafe in one step. The 1Click quote delivers USDC to the Presafe contract with `customRecipientMsg = {"action":"pay","obligation_id":N,"payer":"<customer NEAR account>"}`. Because `sender_id` is `intents.near`, the payer must be named in `msg`, which is why the contract accepts a `payer` field (see known limitations).
 
 ## Disclosures
 
@@ -204,6 +217,7 @@ _In progress._ The question: can USDC delivered by 1Click arrive in the Presafe 
 - **Arbiter trust.** A disputed delivery is settled by an arbiter account (by default one run by Presafe). Customers trust that arbiter.
 - **Non-event obligations.** The default rule is date-based. Services without a clear delivery date need a different claim rule.
 - **Coverage below 100%.** If the bond is smaller than the covered prepayments, each claim is paid pro rata and customers recover only part of their money.
+- **Rejected 1Click deliveries bounce to `intents.near`.** If Presafe rejects a 1Click delivery (for example, the obligation closed between quote and delivery), the token contract refunds `sender_id`, which is `intents.near`, not the customer. The app must only quote open obligations; holding rejected deliveries for the named payer is future work.
 - **Named payer is not verified.** When `msg` names a payer, the contract records the receipt for that account without proof that it funded the payment. Anyone can create a receipt this way, but only by paying the business real USDC, so it cannot be used to drain a bond for free; it can dilute other customers' pro-rata share if the bond is smaller than covered payments.
 - **Pro-rata dust and unclaimed reserve.** After a default, reserve that is never claimed (or rounding remainders) stays locked; there is no sweep yet.
 - **Browser-held customer keys.** Convenient and gasless, but a customer who clears browser data without backing up the key loses access to their receipts. Customers with a NEAR wallet should be able to pay from it directly (not built yet).
