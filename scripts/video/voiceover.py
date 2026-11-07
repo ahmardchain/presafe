@@ -9,7 +9,12 @@
    scene plays faster (up to MAX_SPEEDUP) and any remainder stays as natural silence.
 3. Muxes the result.
 
-Usage: voiceover.py <silent video> <out.mp4> [--voice en-US-Chirp3-HD-Charon] [--dry]
+Engines:
+  --engine google (default): Google Cloud Text-to-Speech, needs the X-Goog-Api-Key network secret.
+  --engine gtts: Google Translate's voice via the gTTS library, no API key (pip install gTTS==2.5.4);
+                 --tld picks the accent (com = US, co.uk = UK, com.ng = Nigeria, ...).
+
+Usage: voiceover.py <silent video> <out.mp4> [--engine google|gtts] [--voice en-US-Chirp3-HD-Charon] [--tld com] [--dry]
 """
 import base64, json, os, subprocess, sys, urllib.request
 
@@ -48,16 +53,28 @@ def synth(text, voice, path):
         audio = base64.b64decode(json.load(r)["audioContent"])
     open(path, "wb").write(audio)
 
+def synth_gtts(text, tld, path):
+    from gtts import gTTS  # pinned: gTTS==2.5.4
+    mp3 = path[:-4] + ".mp3"
+    gTTS(text=text, lang="en", tld=tld).save(mp3)
+    # Trim gTTS's leading/trailing silence so placement is exact.
+    sh("ffmpeg", "-y", "-loglevel", "error", "-i", mp3, "-af",
+       "silenceremove=start_periods=1:start_threshold=-50dB,areverse,silenceremove=start_periods=1:start_threshold=-50dB,areverse",
+       "-ar", "48000", path)
+
 def main():
     args = sys.argv[1:]
     src, out = args[0], args[1]
     voice = args[args.index("--voice") + 1] if "--voice" in args else "en-US-Chirp3-HD-Charon"
-    work = os.path.join(os.path.dirname(os.path.abspath(out)), "vo_work"); os.makedirs(work, exist_ok=True)
+    engine = args[args.index("--engine") + 1] if "--engine" in args else "google"
+    tld = args[args.index("--tld") + 1] if "--tld" in args else "com"
+    tag = f"gtts-{tld}" if engine == "gtts" else voice
+    work = os.path.join(os.path.dirname(os.path.abspath(out)), f"vo_work_{tag}"); os.makedirs(work, exist_ok=True)
     clips = []
     for i, text in enumerate(LINES):
         p = os.path.join(work, f"line{i+1}.wav")
         if not os.path.exists(p):
-            synth(text, voice, p)
+            synth_gtts(text, tld, p) if engine == "gtts" else synth(text, voice, p)
         clips.append((p, duration(p)))
         print(f"line {i+1}: {clips[-1][1]:.2f}s")
     if "--dry" in args:
@@ -67,7 +84,7 @@ def main():
     for i, (clip, adur) in enumerate(clips):
         s, e = SCENES[i], SCENES[i + 1]
         vdur = e - s
-        need = LEAD + adur + TAIL
+        need = LEAD + adur + TAIL + (1.0 if i == len(clips) - 1 else 0.0)
         if need >= vdur:          # voice is longer: keep footage, hold the last frame
             speed, hold, new = 1.0, need - vdur, need
         else:                     # footage is longer: speed up (bounded), rest stays silent
@@ -81,8 +98,9 @@ def main():
            "-c:v", "libx264", "-crf", "20", "-preset", "medium", part)
         vparts.append(part)
         delays.append(t + LEAD)
-        print(f"scene {i+1}: video {vdur:.1f}s -> {new:.1f}s (speed {speed:.2f}, hold {hold:.1f}s), voice at {t + LEAD:.1f}s")
-        t += new
+        actual = duration(part)  # frame rounding makes this differ slightly from `new`; use the real length
+        print(f"scene {i+1}: video {vdur:.1f}s -> {actual:.2f}s (speed {speed:.2f}, hold {hold:.1f}s), voice at {t + LEAD:.1f}s")
+        t += actual
     lst = os.path.join(work, "parts.txt")
     open(lst, "w").write("".join(f"file '{p}'\n" for p in vparts))
     video = os.path.join(work, "video.mp4")
@@ -97,7 +115,7 @@ def main():
     audio = os.path.join(work, "voice.wav")
     sh("ffmpeg", "-y", "-loglevel", "error", *inputs, "-filter_complex", fc, "-map", "[aout]", "-t", f"{t:.2f}", "-ar", "48000", audio)
     sh("ffmpeg", "-y", "-loglevel", "error", "-i", video, "-i", audio, "-map", "0:v", "-map", "1:a", "-c:v", "copy",
-       "-c:a", "aac", "-b:a", "160k", "-shortest", "-movflags", "+faststart", out)
+       "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart", out)
     print(f"wrote {out} ({t:.1f}s)")
 
 if __name__ == "__main__":
