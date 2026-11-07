@@ -1,1 +1,4 @@
 .next-build/
+.open-next/
+.wrangler/
+.dev.vars*
