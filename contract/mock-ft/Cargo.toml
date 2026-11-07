@@ -1,0 +1,16 @@
+[package]
+name = "mock-ft"
+version = "0.1.0"
+edition = "2021"
+description = "TESTNET ONLY mock USDC (NEP-141, 6 decimals) with open minting. Never deploy to mainnet."
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+near-sdk = { workspace = true }
+near-contract-standards = { workspace = true }
+
+[dev-dependencies]
+near-sdk = { workspace = true, features = ["unit-testing"] }

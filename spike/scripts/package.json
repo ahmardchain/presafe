@@ -1,0 +1,10 @@
+{
+  "name": "presafe-spike-scripts",
+  "private": true,
+  "type": "module",
+  "description": "Day-1 spike: 1Click customRecipientMsg delivery into a throwaway contract. Not part of the product.",
+  "dependencies": {
+    "near-api-js": "7.4.0",
+    "dotenv": "17.2.3"
+  }
+}

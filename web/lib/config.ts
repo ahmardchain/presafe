@@ -1,0 +1,10 @@
+export const NETWORK = process.env.NEXT_PUBLIC_NEAR_NETWORK ?? "testnet";
+export const RPC_URL = process.env.NEXT_PUBLIC_NEAR_RPC_URL ?? "https://test.rpc.fastnear.com";
+export const PRESAFE_CONTRACT = process.env.NEXT_PUBLIC_PRESAFE_CONTRACT ?? "presafe-app.testnet";
+export const USDC_CONTRACT = process.env.NEXT_PUBLIC_USDC_CONTRACT ?? "presafe-musdc.testnet";
+export const DEMO_BUSINESS = process.env.NEXT_PUBLIC_DEMO_BUSINESS ?? "lagos-sound-fest.testnet";
+export const TOKEN_LABEL = NETWORK === "mainnet" ? "USDC" : "test USDC";
+export const TOKEN_DECIMALS = 6;
+const EXPLORER = NETWORK === "mainnet" ? "https://nearblocks.io" : "https://testnet.nearblocks.io";
+export const explorerAccount = (id: string) => `${EXPLORER}/address/${id}`;
+export const explorerTx = (hash: string) => `${EXPLORER}/txns/${hash}`;
