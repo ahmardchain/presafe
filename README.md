@@ -249,7 +249,7 @@ Design consequence: a customer on another chain pays Presafe in one step. The 1C
 
 - **All code in this repository was written during NEAR HACKATHON** (the window opened 2026-10-19). No code is reused from the author's earlier projects, including the "Climb" escrow contract on Arc.
 - **Other hackathon entries:** Presafe is the author's only NEAR HACKATHON entry.
-- **AI assistance:** built with Claude Code. The demo video's narration is synthetic (Google Translate's voice via gTTS).
+- **AI assistance:** built with Claude Code. The demo video's narration is synthetic (Microsoft Edge's neural voice "Andrew" via edge-tts); its stick-figure scenes are HTML/CSS animations in `scripts/video`.
 - **Libraries, templates and assets** (all versions pinned):
 
 | Library | Version | Used for |
@@ -269,7 +269,7 @@ Design consequence: a customer on another chain pays Presafe in one step. The 1C
 | @opennextjs/cloudflare, wrangler | 1.20.16, 4.158.0 | Cloudflare Workers deployment |
 | dotenv | 17.2.3 | Spike scripts |
 | Playwright | 1.63.0 | Demo video recording |
-| gTTS | 2.5.4 | Demo video narration |
+| edge-tts | 7.2.3 | Demo video narration |
 
 ## Known limitations
 
