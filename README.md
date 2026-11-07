@@ -47,7 +47,7 @@ After the claim, the customer held 2.00 test USDC and their NEAR balance was sti
 
 ## Demo video
 
-A 1:35 narrated walkthrough: the problem and the fix as a short animation, then the live site: badge, pay, missed deadline, gasless claim. _Link to the X post added once it is published._
+A 1:35 narrated walkthrough: the problem and the fix as a short animation, then the live site: badge, pay, missed deadline, gasless claim. Watch it on X: https://x.com/Ahmardchain/status/2118905952887816627
 
 ## How NEAR is used
 
