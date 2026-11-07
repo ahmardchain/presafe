@@ -10,6 +10,7 @@ export interface Summary {
   bond: number;
   covered: number;
   claimsPaid: number;
+  payments: number;
   coveragePct: number | null;
   next: Obligation | undefined;
 }
@@ -32,6 +33,7 @@ export async function summarize(id: string): Promise<Summary | null> {
     bond: toNum(business.bond_total),
     covered: toNum(business.total_covered),
     claimsPaid: toNum(business.claims_paid_amount),
+    payments: obligations.reduce((n, o) => n + Number(o.receipt_count), 0),
     coveragePct: covered === 0n ? null : Number((reserved * 100n) / covered),
     next: (() => {
       const now = BigInt(Date.now()) * 1_000_000n;
