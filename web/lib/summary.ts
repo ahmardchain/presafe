@@ -33,7 +33,10 @@ export async function summarize(id: string): Promise<Summary | null> {
     covered: toNum(business.total_covered),
     claimsPaid: toNum(business.claims_paid_amount),
     coveragePct: covered === 0n ? null : Number((reserved * 100n) / covered),
-    next: obligations.find((o) => o.status === "Open") ?? obligations[0],
+    next:
+      obligations
+        .filter((o) => o.status === "Open")
+        .sort((a, b) => (BigInt(a.deliver_by_ns) < BigInt(b.deliver_by_ns) ? -1 : 1))[0] ?? obligations[0],
   };
 }
 

@@ -36,7 +36,7 @@ _TBD once the testnet contract and the badge page are live._
 | --- | --- |
 | NEP-141 fungible tokens (USDC) | Bonds and payments are stablecoin transfers into the Presafe contract through `ft_transfer_call`. Mainnet USDC is `17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1`; testnet uses a mock NEP-141 token. |
 | NEAR Intents (1Click API) | A customer pays, or a business funds its bond, from another chain and token. 1Click swaps it into USDC on NEAR. _Delivery design: see [Spike: 1Click into the contract](#spike-1click-into-the-contract)._ |
-| Meta transactions (NEP-366) | Customers dispute and claim through a self-hosted relayer, so they do not need NEAR for gas. |
+| Meta transactions (NEP-366) | Customers pay (testnet), dispute, claim and trigger default by signing a delegate action in the browser; Presafe's self-hosted relayer submits it and pays the gas. The relayer only accepts `claim`, `dispute` and `trigger_default` on the Presafe contract, and `ft_transfer_call` into Presafe (plus the capped test-token `mint` on testnet). |
 | Named accounts | The badge identity is a readable account such as `<business>.near`, shown on the badge page and in the embeddable SVG. |
 
 ## Architecture
@@ -67,6 +67,14 @@ flowchart LR
   Web -- view calls --> C
 ```
 
+## Customer keys and gasless actions
+
+A customer needs no wallet. On first payment the browser generates an ed25519 key and stores it in `localStorage`; the customer's NEAR account is the 64-character implicit account derived from that key. On testnet the relayer creates it by sending 0.01 NEAR. Every later action is signed locally as a NEP-366 delegate action and submitted by the relayer.
+
+Verified on testnet on 2026-11-07 through the real UI: pay 2 test USDC into an obligation, wait past its deadline, open claims, claim. The customer received 2 test USDC and their NEAR balance stayed at the 0.01 they were onboarded with.
+
+Trade-off: the key lives in one browser. Clearing browser data loses it, so `/claims` offers "Copy recovery key" and "Restore".
+
 ## Contract rules
 
 Source: [`contract/presafe/src/lib.rs`](contract/presafe/src/lib.rs). Payments arrive through `ft_transfer_call` with `msg` `{"action":"pay","obligation_id":N}`, optionally with `"payer":"<account>"` so that a third party (such as a 1Click `customRecipientMsg` delivery) can pay on a customer's behalf. Bond funding uses `{"action":"fund_bond"}`.
@@ -95,8 +103,8 @@ contract/presafe/            Presafe contract (Rust, near-sdk 5.30.1)
 contract/mock-ft/            Testnet-only mock USDC (NEP-141, 6 decimals, capped open mint)
 contract/integration-tests/  near-sandbox integration tests
 scripts/testnet/             Deploy and seed scripts for NEAR testnet (print a plan; sign only with --execute)
-relayer/                     Meta transaction relayer, restricted to the Presafe contract (TBD)
-web/                         Next.js app: badge, business, pay, claims pages (TBD)
+web/                         Next.js app: landing, badge, pay and claims pages (business page TBD)
+web/lib/server/relayer.ts    Meta transaction relayer (served at /api/relay), restricted by an allowlist
 spike/                       Day-1 experiment: 1Click delivery into a contract (not part of the product)
 ```
 
@@ -156,6 +164,8 @@ _In progress._ The question: can USDC delivered by 1Click arrive in the Presafe 
 - **Coverage below 100%.** If the bond is smaller than the covered prepayments, each claim is paid pro rata and customers recover only part of their money.
 - **Named payer is not verified.** When `msg` names a payer, the contract records the receipt for that account without proof that it funded the payment. Anyone can create a receipt this way, but only by paying the business real USDC, so it cannot be used to drain a bond for free; it can dilute other customers' pro-rata share if the bond is smaller than covered payments.
 - **Pro-rata dust and unclaimed reserve.** After a default, reserve that is never claimed (or rounding remainders) stays locked; there is no sweep yet.
+- **Browser-held customer keys.** Convenient and gasless, but a customer who clears browser data without backing up the key loses access to their receipts. Customers with a NEAR wallet should be able to pay from it directly (not built yet).
+- **Relayer abuse limits are basic.** A per-IP rate limit and a strict method allowlist. Enough for a testnet demo, not for production.
 - **No Intents testnet.** The contract flow runs on testnet; the 1Click leg can only be shown on mainnet with small amounts.
 
 ## License
