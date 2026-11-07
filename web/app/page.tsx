@@ -3,13 +3,15 @@ import { ArrowRight } from "lucide-react";
 import { Ticket, Ticker } from "@/components/Ticket";
 import { MoneyFlow } from "@/components/MoneyFlow";
 import { DEMO_BUSINESS, TOKEN_LABEL } from "@/lib/config";
-import { day } from "@/lib/format";
+import { day, obligationTone } from "@/lib/format";
 import { stubWord, summarize } from "@/lib/summary";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const s = await summarize(DEMO_BUSINESS).catch(() => null);
+  // The hero ticket is about one obligation, so it takes that obligation's status, not the business's.
+  const tone = s?.next ? obligationTone(s.next) : s?.tone ?? "neutral";
 
   return (
     <>
@@ -46,14 +48,14 @@ export default async function Home() {
               {s ? (
                 <Link href={`/b/${DEMO_BUSINESS}`} className="block">
                   <Ticket
-                    tone={s.tone}
+                    tone={tone}
                     eyebrow={s.business.account_id}
                     title={s.next?.title ?? s.business.name}
-                    stubWord={stubWord[s.tone]}
-                    stamp={s.tone === "protected" ? "Bonded" : undefined}
+                    stubWord={stubWord[tone]}
+                    stamp={tone === "protected" ? "Bonded" : undefined}
                     fields={[
                       { label: `Bond · ${TOKEN_LABEL}`, value: <Ticker value={s.bond} /> },
-                      { label: "Coverage", value: s.coveragePct === null ? "No sales yet" : <><Ticker value={s.coveragePct} decimals={0} />%</> },
+                      { label: "Coverage", value: s.next?.coverage_bps ? <><Ticker value={Math.floor(Number(s.next.coverage_bps) / 100)} decimals={0} />%</> : "No sales yet" },
                       { label: "Deliver by", value: s.next ? day(s.next.deliver_by_ns) : "—" },
                       { label: "Claims paid", value: s.business.claims_paid_count },
                     ]}
