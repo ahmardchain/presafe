@@ -33,8 +33,8 @@ export default async function BadgePage({ params }: { params: Promise<{ business
       <section className="grid grid-cols-2 gap-px border-b border-rule bg-rule md:grid-cols-4">
         {[
           ["Bond", <><Ticker value={s.bond} /></>, TOKEN_LABEL],
-          ["Prepayments covered", <><Ticker value={s.covered} /></>, TOKEN_LABEL],
-          ["Claims paid", <><Ticker value={b.claims_paid_count} decimals={0} /></>, `${amount(b.claims_paid_amount)}`],
+          ["Prepayments covered", <><Ticker value={s.covered} /></>, `${TOKEN_LABEL} from ${s.payments} customer payment${s.payments === 1 ? "" : "s"}`],
+          ["Claims paid", <><Ticker value={b.claims_paid_count} decimals={0} /></>, `${amount(b.claims_paid_amount)} paid back`],
           ["Arbiter", <span key="a" className="break-all text-[15px]">{b.arbiter}</span>, "settles disputes"],
         ].map(([k, v, note], i) => (
           <div key={i} className="bg-paper py-5 pr-4 [&:not(:first-child)]:pl-5 max-md:[&:nth-child(3)]:pl-0">
@@ -69,7 +69,7 @@ export default async function BadgePage({ params }: { params: Promise<{ business
                     o.status === "Defaulted"
                       ? { label: "Claimed", value: amount(o.claimed_total) }
                       : { label: "Claims open after", value: when(o.default_after_ns).replace(" UTC", "") },
-                    { label: "Paid", value: `${o.receipt_count} · ${amount(o.covered_total, false)}` },
+                    { label: "Customer payments", value: `${o.receipt_count} · ${amount(o.covered_total, false)}` },
                   ]}
                 />
                 {o.status === "Open" && (
