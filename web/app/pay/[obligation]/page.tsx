@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { Ticket } from "@/components/Ticket";
 import { PayPanel } from "@/components/pay/PayPanel";
 import { AnyChainPanel } from "@/components/pay/AnyChainPanel";
-import { amount, coveragePct, day, obligationTone, statusLabel } from "@/lib/format";
+import { amount, coveragePct, day, obligationTone, statusText } from "@/lib/format";
 import { getBusiness, view, type Obligation } from "@/lib/near";
 import { stubWord } from "@/lib/summary";
 
@@ -35,7 +35,7 @@ export default async function PayPage({ params }: { params: Promise<{ obligation
           <Ticket
             className="mt-8"
             tone={tone}
-            eyebrow={`${b.account_id} · ${statusLabel[o.status]}`}
+            eyebrow={`${b.account_id} · ${statusText(o)}`}
             title={o.title}
             stubWord={stubWord[tone]}
             fields={[

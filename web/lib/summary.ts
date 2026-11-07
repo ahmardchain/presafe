@@ -33,10 +33,13 @@ export async function summarize(id: string): Promise<Summary | null> {
     covered: toNum(business.total_covered),
     claimsPaid: toNum(business.claims_paid_amount),
     coveragePct: covered === 0n ? null : Number((reserved * 100n) / covered),
-    next:
-      obligations
-        .filter((o) => o.status === "Open")
-        .sort((a, b) => (BigInt(a.deliver_by_ns) < BigInt(b.deliver_by_ns) ? -1 : 1))[0] ?? obligations[0],
+    next: (() => {
+      const now = BigInt(Date.now()) * 1_000_000n;
+      const open = obligations.filter((o) => o.status === "Open");
+      const upcoming = open.filter((o) => BigInt(o.deliver_by_ns) > now);
+      const byDeadline = (a: Obligation, b: Obligation) => (BigInt(a.deliver_by_ns) < BigInt(b.deliver_by_ns) ? -1 : 1);
+      return upcoming.sort(byDeadline)[0] ?? open.sort(byDeadline)[0] ?? obligations[0];
+    })(),
   };
 }
 
