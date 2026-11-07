@@ -67,6 +67,17 @@ flowchart LR
   Web -- view calls --> C
 ```
 
+## Business page
+
+`/business` has two ways in:
+
+- **Connect a NEAR wallet** through `@hot-labs/near-connect` (the real path; the only one on mainnet). The wallet signs each action.
+- **Testnet only: "Start demo business".** The browser generates a key, the relayer funds its implicit account with 0.3 testnet NEAR, and the page signs locally. This lets judges try the business side without a testnet wallet.
+
+From the dashboard a business registers (0.05 NEAR storage deposit), gets test USDC (testnet), funds and withdraws its bond, creates obligations (with a 3-minute demo deadline preset), copies a pay link, marks delivered, releases the bond after the dispute window, adds reserve, or admits it can't deliver.
+
+Verified on testnet on 2026-11-07 through the real UI as a demo business: register, get 10 test USDC, fund 5, create a 3-minute obligation, mark delivered, release after the window, withdraw. End state on chain: obligation `Delivered`, bond 0, wallet 10 test USDC.
+
 ## Customer keys and gasless actions
 
 A customer needs no wallet. On first payment the browser generates an ed25519 key and stores it in `localStorage`; the customer's NEAR account is the 64-character implicit account derived from that key. On testnet the relayer creates it by sending 0.01 NEAR. Every later action is signed locally as a NEP-366 delegate action and submitted by the relayer.
@@ -103,7 +114,7 @@ contract/presafe/            Presafe contract (Rust, near-sdk 5.30.1)
 contract/mock-ft/            Testnet-only mock USDC (NEP-141, 6 decimals, capped open mint)
 contract/integration-tests/  near-sandbox integration tests
 scripts/testnet/             Deploy and seed scripts for NEAR testnet (print a plan; sign only with --execute)
-web/                         Next.js app: landing, badge, pay and claims pages (business page TBD)
+web/                         Next.js app: landing, badge, pay, claims and business pages
 web/lib/server/relayer.ts    Meta transaction relayer (served at /api/relay), restricted by an allowlist
 spike/                       Day-1 experiment: 1Click delivery into a contract (not part of the product)
 ```

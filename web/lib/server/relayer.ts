@@ -19,7 +19,8 @@ const TGAS = 1_000_000_000_000n;
 const MAX_TOTAL_GAS = 300n * TGAS;
 const MINT_DEPOSIT = nearToYocto("0.00125");
 const MAX_TEST_MINT = 20_000_000n; // 20 test USDC per relayed mint
-const ONBOARD_NEAR = nearToYocto("0.01"); // creates an implicit account (testnet)
+const ONBOARD_NEAR = nearToYocto("0.01"); // creates a customer's implicit account (testnet)
+const ONBOARD_BUSINESS_NEAR = nearToYocto("0.3"); // demo business: storage deposit + gas (testnet)
 
 type Rule = (args: Record<string, unknown>, sender: string, deposit: bigint) => string | null;
 
@@ -99,14 +100,15 @@ export async function relay(sd: SignedDelegate) {
 }
 
 /** Creates a 64-hex implicit account for a browser key by sending it a little NEAR. Testnet only. */
-export async function onboard(accountId: string): Promise<{ created: boolean; hash?: string }> {
+export async function onboard(accountId: string, role: "customer" | "business" = "customer"): Promise<{ created: boolean; hash?: string }> {
   if (NETWORK !== "testnet") throw new Error("onboarding is testnet-only");
   if (!/^[0-9a-f]{64}$/.test(accountId)) throw new Error("not an implicit account id");
   try {
     await provider.viewAccount({ accountId });
     return { created: false };
   } catch {
-    const out = await relayer().signAndSendTransaction({ receiverId: accountId, actions: [A.transfer(ONBOARD_NEAR)] });
+    const amount = role === "business" ? ONBOARD_BUSINESS_NEAR : ONBOARD_NEAR;
+    const out = await relayer().signAndSendTransaction({ receiverId: accountId, actions: [A.transfer(amount)] });
     return { created: true, hash: out.transaction.hash };
   }
 }
