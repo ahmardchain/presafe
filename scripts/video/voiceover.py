@@ -10,25 +10,29 @@
 3. Muxes the result.
 
 Engines:
-  --engine google (default): Google Cloud Text-to-Speech, needs the X-Goog-Api-Key network secret.
+  --engine edge (default): Microsoft Edge read-aloud neural voices via edge-tts, no key
+                 (pip install edge-tts==7.2.3; default voice en-US-AndrewNeural). Uses HTTPS_PROXY if set.
+  --engine google: Google Cloud Text-to-Speech, needs the X-Goog-Api-Key network secret.
   --engine gtts: Google Translate's voice via the gTTS library, no API key (pip install gTTS==2.5.4);
                  --tld picks the accent (com = US, co.uk = UK, com.ng = Nigeria, ...).
 
   --pitch F: shift the voice's pitch by factor F with ffmpeg's rubberband filter (formants shifted
              too), e.g. 0.72 turns gTTS's ~195 Hz voice into a ~140 Hz male-range voice.
+  --nospeed 1,2: scenes that always play at normal speed (timed animations); spare time stays silent.
   --scenes a,b,...: scene boundaries in seconds when the video differs from the default cut
              (one more value than there are lines).
 
-Usage: voiceover.py <silent video> <out.mp4> [--engine google|gtts] [--voice en-US-Chirp3-HD-Charon] [--tld com]
+Usage: voiceover.py <silent video> <out.mp4> [--engine edge|google|gtts] [--voice en-US-AndrewNeural] [--tld com]
                     [--pitch 0.72] [--scenes 0,12.1,...] [--dry]
 """
 import base64, json, os, subprocess, sys, urllib.request
 
 LINES = [
     "You pay upfront for festival tickets, tours, custom orders. And when the business doesn't deliver, your money's usually just gone.",
-    "Presafe fixes that. The business posts a USDC bond on NEAR, and it keeps every payment the moment it arrives. So it's not escrow. Only the bond waits.",
+    "Presafe fixes that. The business posts a USDC bond on NEAR, and gets a public badge. You pay, and the money goes straight to the business. It's not escrow. Only the bond waits. If they miss the date, you tap Claim, and you're paid back from the bond. No wallet. No gas.",
+    "Here's the real app, live on NEAR testnet.",
     "Anyone can check that bond on a public badge, read live from the contract. No wallet needed.",
-    "Here, a customer buys a two-dollar ticket. Before paying, they can see exactly what they'd get back. One tap. No wallet, no gas. It's signed right in the browser and relayed as a NEAR meta transaction.",
+    "Here, a customer buys a two-dollar ticket. Before paying, they can see exactly what they'd get back. One tap. It's signed right in the browser and relayed as a NEAR meta transaction.",
     "They can also pay from Base, Arbitrum or Solana, through NEAR Intents. We've tested that route on mainnet.",
     "And the business? It already has the money.",
     "Then the deadline passes. No show.",
@@ -63,19 +67,31 @@ def synth_gtts(text, tld, path):
     from gtts import gTTS  # pinned: gTTS==2.5.4
     mp3 = path[:-4] + ".mp3"
     gTTS(text=text, lang="en", tld=tld).save(mp3)
-    # Trim gTTS's leading/trailing silence so placement is exact.
+    trim_to_wav(mp3, path)
+
+def trim_to_wav(mp3, path):
+    # Trim leading/trailing silence so placement is exact.
     sh("ffmpeg", "-y", "-loglevel", "error", "-i", mp3, "-af",
        "silenceremove=start_periods=1:start_threshold=-50dB,areverse,silenceremove=start_periods=1:start_threshold=-50dB,areverse",
        "-ar", "48000", path)
 
+def synth_edge(text, voice, path):
+    import asyncio, edge_tts  # pinned: edge-tts==7.2.3 (Microsoft Edge read-aloud neural voices, no key)
+    mp3 = path[:-4] + ".mp3"
+    proxy = os.environ.get("HTTPS_PROXY") or os.environ.get("https_proxy")
+    asyncio.run(edge_tts.Communicate(text, voice, proxy=proxy).save(mp3))
+    trim_to_wav(mp3, path)
+
 def main():
     args = sys.argv[1:]
     src, out = args[0], args[1]
-    voice = args[args.index("--voice") + 1] if "--voice" in args else "en-US-Chirp3-HD-Charon"
-    engine = args[args.index("--engine") + 1] if "--engine" in args else "google"
+    engine = args[args.index("--engine") + 1] if "--engine" in args else "edge"
+    voice = args[args.index("--voice") + 1] if "--voice" in args else ("en-US-AndrewNeural" if engine == "edge" else "en-US-Chirp3-HD-Charon")
     tld = args[args.index("--tld") + 1] if "--tld" in args else "com"
     pitch = float(args[args.index("--pitch") + 1]) if "--pitch" in args else None
     scenes = [float(x) for x in args[args.index("--scenes") + 1].split(",")] if "--scenes" in args else SCENES
+    # Scenes (1-based) that must play at normal speed, e.g. the timed stick-figure animations.
+    nospeed = {int(x) for x in args[args.index("--nospeed") + 1].split(",")} if "--nospeed" in args else set()
     assert len(scenes) == len(LINES) + 1, "need one scene boundary more than there are lines"
     tag = (f"gtts-{tld}" if engine == "gtts" else voice) + (f"-p{pitch}" if pitch else "")
     work = os.path.join(os.path.dirname(os.path.abspath(out)), f"vo_work_{tag}"); os.makedirs(work, exist_ok=True)
@@ -84,7 +100,12 @@ def main():
         p = os.path.join(work, f"line{i+1}.wav")
         if not os.path.exists(p):
             raw = p[:-4] + ".raw.wav" if pitch else p
-            synth_gtts(text, tld, raw) if engine == "gtts" else synth(text, voice, raw)
+            if engine == "gtts":
+                synth_gtts(text, tld, raw)
+            elif engine == "edge":
+                synth_edge(text, voice, raw)
+            else:
+                synth(text, voice, raw)
             if pitch:
                 sh("ffmpeg", "-y", "-loglevel", "error", "-i", raw, "-af",
                    f"rubberband=pitch={pitch}:formant=shifted:pitchq=quality", "-ar", "48000", p)
@@ -101,7 +122,7 @@ def main():
         if need >= vdur:          # voice is longer: keep footage, hold the last frame
             speed, hold, new = 1.0, need - vdur, need
         else:                     # footage is longer: speed up (bounded), rest stays silent
-            speed = min(MAX_SPEEDUP, vdur / need)
+            speed = 1.0 if (i + 1) in nospeed else min(MAX_SPEEDUP, vdur / need)
             hold, new = 0.0, vdur / speed
         part = os.path.join(work, f"scene{i+1}.mp4")
         vf = f"trim=start={s}:end={e},setpts=(PTS-STARTPTS)/{speed:.4f}"
