@@ -29,7 +29,7 @@ If it misses the date it promised, its customers claim the bond back, with no wa
 | **Source** | https://github.com/ahmardchain/presafe |
 | **Network** | NEAR testnet (`testnet`): contract [`presafe-app.testnet`](https://testnet.nearblocks.io/address/presafe-app.testnet). NEAR mainnet (`mainnet`) for the NEAR Intents proof: [`94gPxba…`](https://nearblocks.io/txns/94gPxbaXa8cs4noBg1XvRNZF84TSi1HDJ3G1UVziCCSg) |
 | **Stack** | Rust (near-sdk 5.30.1), Next.js 16 on Cloudflare Workers, near-api-js 7.4.0, NEAR Intents 1Click API |
-| **For judges** | [JUDGES.md](JUDGES.md): a 5-minute "do X, see Y" run-through |
+| **For judges** | [How to test it](#how-to-test-it-for-judges): a step-by-step "do X, see Y" run-through in this README |
 
 Built for [NEAR HACKATHON](https://nearhackathon.com), track **Real-World Money** (`realworld`).
 
@@ -52,14 +52,100 @@ Escrow is not the answer: organizers need presale cash to pay venues and artists
 
 **Video (1:35):** [watch on X](https://x.com/Ahmardchain/status/2118905952887816627). It shows the problem and the fix as a short animation, then the live app: badge, pay, missed deadline, gasless claim.
 
-**Try it yourself:** [JUDGES.md](JUDGES.md) has the full run-through. The short version:
+## How to test it (for judges)
 
-1. Open [the demo business's badge](https://presafe.ahmardchain.workers.dev/b/lagos-sound-fest.testnet). You see its bond, how much of its customers' money it covers and the claims paid, read live from the contract. No wallet is needed.
-2. Open [`/pay/8`](https://presafe.ahmardchain.workers.dev/pay/8) and tap **Pay 2.00 test USDC**. You see "You're covered." There is no wallet popup and no gas: the browser signs and Presafe's relayer submits.
-3. Go to [`/business`](https://presafe.ahmardchain.workers.dev/business), then **Start demo business**, fund a bond and create an obligation with the **In 3 min (demo)** deadline. Pay it, wait about 4 minutes, and open [`/claims`](https://presafe.ahmardchain.workers.dev/claims). Tap **Deadline missed: open claims**, then **Claim**. You see "Paid back".
+Everything below runs on the live app on NEAR testnet with test USDC. **You need no wallet, no NEAR and no crypto.** Each step says what to do and what you should see. Total time is about 10 minutes, most of it waiting for a 3-minute deadline to pass.
+
+| Step | What it proves | Time |
+| --- | --- | --- |
+| [1. Check a business's bond](#1-check-a-businesss-bond-30-seconds-read-only) | The bond and claims are public and read live from the contract | 30 s |
+| [2. Pay with protection](#2-pay-with-protection-1-minute-no-wallet-no-gas) | A customer pays with no wallet and no gas (meta transaction) | 1 min |
+| [3. Pay from another chain](#3-pay-from-another-chain-30-seconds-preview) | NEAR Intents quotes a payment from Base straight into the contract | 30 s |
+| [4. A missed deadline and a gasless claim](#4-a-missed-deadline-and-a-gasless-claim-about-6-minutes) | The full protection loop: default, then the customer is paid back from the bond | 6 min |
+| [5. Contract tests](#5-contract-tests-optional-about-5-minutes) | 41 automated tests, the same run as CI | 5 min |
+
+### 1. Check a business's bond (30 seconds, read only)
+
+**Do:** open https://presafe.ahmardchain.workers.dev/b/lagos-sound-fest.testnet
+
+**See:**
+- A one-line status for the business, such as "Claims open: a delivery was missed. 5 claims paid so far."
+- Four numbers: **Bond** (USDC locked as a guarantee), **Prepayments covered** (total customers have paid in, and from how many payments), **Claims paid** (receipts paid back from the bond, and the amount), and **Arbiter**.
+- A list of obligations (events), newest first, each with its reserve, coverage, deadline and customer payments.
+
+All of this is read live from the contract. To confirm, compare it with the raw contract data:
+
+```bash
+curl -s https://test.rpc.fastnear.com -H 'content-type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"query","params":{"request_type":"call_function","finality":"final","account_id":"presafe-app.testnet","method_name":"get_business","args_base64":"eyJhY2NvdW50X2lkIjoibGFnb3Mtc291bmQtZmVzdC50ZXN0bmV0In0="}}' | python3 -c "import json,sys; print(bytes(json.load(sys.stdin)['result']['result']).decode())"
+```
+
+`bond_total`, `total_covered`, `claims_paid_count` and `claims_paid_amount` (6 decimals) match the page.
+
+**Also:** open https://presafe.ahmardchain.workers.dev/b/lagos-sound-fest.testnet/badge.svg. You see the embeddable badge image a business would put on its ticket page.
+
+### 2. Pay with protection (1 minute, no wallet, no gas)
+
+**Do:** open https://presafe.ahmardchain.workers.dev/pay/8 (the "Main Stage (Dec 20)" obligation, open until 2026-12-20). Keep the amount at 2.00 and tap **Pay 2.00 test USDC**.
+
+**See:**
+- Before paying: "You can claim up to … of 2.00", the amount you'd get back from the bond.
+- After a few seconds: **"You're covered."** with **See your receipt** and **Transaction** buttons.
+- No wallet popup and no gas. Your browser generated a key, Presafe's relayer funded a fresh account with 0.01 testnet NEAR, minted 2 test USDC for you, and submitted your signed payment as a NEP-366 meta transaction.
+
+**Check:** tap **Transaction**. On nearblocks, the transaction is signed by `presafe-relayer.testnet` and contains a delegate action from your 64-character account: `ft_transfer_call` to `presafe-app.testnet`.
+
+### 3. Pay from another chain (30 seconds, preview)
+
+**Do:** on the same page, scroll to **Pay from another chain**. Pick **USDC on Base** and an amount.
+
+**See:** a live NEAR Intents 1Click quote, such as "2.0 USDC on Base → 1.99… USDC on NEAR · about 35s", delivered with msg `{"action":"pay","obligation_id":8}`.
+
+This is a `dry: true` quote: NEAR Intents has no testnet, so the demo creates no deposit address. The same route was run on mainnet with real money: 1.00 USDC from Base was delivered into a contract with the payment details attached ([`94gPxba…`](https://nearblocks.io/txns/94gPxbaXa8cs4noBg1XvRNZF84TSi1HDJ3G1UVziCCSg)). See [Key design decision](#key-design-decision-1click-delivers-straight-into-the-contract).
+
+### 4. A missed deadline and a gasless claim (about 6 minutes)
+
+**Do:**
+1. Open https://presafe.ahmardchain.workers.dev/business and tap **Start demo business**. The relayer funds a testnet account for it.
+2. Register the business, tap **Get 10 test USDC**, then **Fund bond**.
+3. Create an obligation with the **In 3 min (demo)** deadline, then tap **Copy pay link**.
+4. Open the pay link in the same browser and pay, as in step 2.
+5. Wait about 4 minutes (a 3-minute deadline plus a short grace period).
+6. Open https://presafe.ahmardchain.workers.dev/claims.
+
+**See:**
+- Your receipt shows **Deadline missed: open claims**. Tap it. Anyone may do this once the deadline and grace period have passed.
+- A **Claim** button appears. Tap it.
+- **"Paid back"**: your test USDC returns from the business's bond. Your NEAR balance doesn't change, because the relayer paid the gas.
+- Back on your business's badge page (`/b/<your account>`), the status now says claims are open and shows the claim paid.
+
+### 5. Contract tests (optional, about 5 minutes)
+
+**Do:** with Rust 1.97, the `wasm32-unknown-unknown` target and `cargo-near` 0.23.0 installed:
+
+```bash
+contract/run-tests.sh
+```
+
+**See:** `34 passed` (Presafe unit tests), `3 passed` (mock token), then `4 passed` (sandbox integration tests with real cross-contract calls, including a claim relayed as a meta transaction). The same run is in [GitHub Actions](https://github.com/ahmardchain/presafe/actions/workflows/contract-tests.yml).
+
+### What is real and what is a demo stand-in
+
+- **Real:** the contract on testnet; the meta transactions; the relayer; the live 1Click quotes; the mainnet 1Click delivery.
+- **Stand-ins:** the test USDC (`presafe-musdc.testnet`, our own token with an open capped mint); the demo business, which is fictional; the testnet faucet built into the app.
+
+The full audit is in [What's real vs. mock](#whats-real-vs-mock).
+
+### If something doesn't work
+
+- **"Paying…" spins for more than a minute:** testnet RPC can be slow. Reload; your receipt appears on `/claims` if the payment went through.
+- **No Claim button yet:** the deadline plus grace period hasn't passed. The receipt shows when claims open.
+- **Different browser:** customer keys live in one browser's storage. Use the same browser for paying and claiming, or move the key with **Copy recovery key** and **Restore** on `/claims`.
+
+This run-through is also available as a standalone file: [JUDGES.md](JUDGES.md).
 
 ## Table of contents
 
+- [How to test it (for judges)](#how-to-test-it-for-judges)
 - [How it works](#how-it-works)
 - [How NEAR is used](#how-near-is-used)
 - [Key design decision: 1Click delivers straight into the contract](#key-design-decision-1click-delivers-straight-into-the-contract)
@@ -275,7 +361,7 @@ From the official rules, [HACKATHON.md](https://nearhackathon.com/HACKATHON.md):
 | Public repository by 2026-11-14T23:59Z | ✅ | https://github.com/ahmardchain/presafe |
 | Demo post on X saying it was built at NEAR HACKATHON, tagging @NEARProtocol and #NEARHackathon, with a video | ✅ | [X post](https://x.com/Ahmardchain/status/2118905952887816627) |
 | Submitted once through the submission API | ✅ | Saved on 2026-11-07; public fields mirrored in [SUBMISSION.md](SUBMISSION.md) |
-| README a judge or an AI screener can reproduce, with "do X, see Y" steps (Q-012, Q-017) | ✅ | [Demo](#demo), [JUDGES.md](JUDGES.md), [Getting started](#getting-started) |
+| README a judge or an AI screener can reproduce, with "do X, see Y" steps (Q-012, Q-017) | ✅ | [How to test it](#how-to-test-it-for-judges), [Getting started](#getting-started) |
 | Hosted demo kept up until at least 2026-11-18 (Q-012) | ✅ | https://presafe.ahmardchain.workers.dev |
 | LICENSE file (Q-014) | ✅ | [MIT](LICENSE) |
 | Libraries, templates and AI code listed (Q-005) | ✅ | [Disclosures](#disclosures) |
@@ -294,7 +380,7 @@ The rules publish no weighted rubric. They say AI screeners check reproducibilit
 | **Track hints: stablecoins** | Bonds, payments and claims are all USDC (NEP-141). | [How NEAR is used](#how-near-is-used) |
 | **Track hints: NEAR Intents** | 1Click delivers a payment from another chain straight into the contract, tied to an obligation and a customer. | [Mainnet tx](https://nearblocks.io/txns/94gPxbaXa8cs4noBg1XvRNZF84TSi1HDJ3G1UVziCCSg), [Key design decision](#key-design-decision-1click-delivers-straight-into-the-contract) |
 | **Track hints: meta transactions** | Customers pay, dispute and claim with NEP-366 delegate actions through a self-hosted relayer. | [Claim tx](https://testnet.nearblocks.io/txns/5RpNDfE2D8wjtvPQyh6GQrLJGqKQ789UzbXwXENKYGv), [`relayer.ts`](web/lib/server/relayer.ts) |
-| **Reproducibility** (Q-017) | A step-by-step judge guide, scripted testnet deploy, and contract tests run in CI on every push. | [JUDGES.md](JUDGES.md), [CI](https://github.com/ahmardchain/presafe/actions/workflows/contract-tests.yml), [Getting started](#getting-started) |
+| **Reproducibility** (Q-017) | A step-by-step judge guide, scripted testnet deploy, and contract tests run in CI on every push. | [How to test it](#how-to-test-it-for-judges), [CI](https://github.com/ahmardchain/presafe/actions/workflows/contract-tests.yml), [Getting started](#getting-started) |
 | **Feature verification** (Q-017) | Every claim links to a transaction, a live page or a test. | [Live proof](#live-proof), [What's real vs. mock](#whats-real-vs-mock) |
 | **Hosted demo is a plus** (Q-012) | Live on Cloudflare Workers, no wallet needed to try it. | https://presafe.ahmardchain.workers.dev |
 | **Only NEAR work built in the window is judged** (Q-002) | The whole project was built in the window. | [Disclosures](#disclosures), [CHANGELOG.md](CHANGELOG.md) |
