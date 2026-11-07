@@ -1,6 +1,6 @@
 // Requests a 1Click quote that delivers NEAR USDC to the spike contract via ft_transfer_call.
 // Default is dry: true (no deposit address, nothing to spend). --live requests a real quote.
-// Usage: node quote.mjs --origin <assetId> --amount <smallest units> --refund <origin-chain address> [--live]
+// Usage: node quote.mjs --origin <assetId> --amount <smallest units> --refund <address> [--refund-type ORIGIN_CHAIN|INTENTS] [--payer <near account>] [--live]
 import fs from "node:fs";
 import path from "node:path";
 import { USDC_ASSET, arg, flag, loadKey, oneclick } from "./common.mjs";
@@ -9,7 +9,9 @@ const { accountId } = loadKey();
 const origin = arg("--origin"), amount = arg("--amount"), refundTo = arg("--refund");
 if (!origin || !amount || !refundTo) { console.error("need --origin --amount --refund"); process.exit(1); }
 const live = flag("--live");
-const msg = JSON.stringify({ action: "pay", obligation_id: "spike-1", payer: refundTo });
+const refundType = arg("--refund-type") || "ORIGIN_CHAIN";
+const payer = arg("--payer") || refundTo;
+const msg = JSON.stringify({ action: "pay", obligation_id: "spike-1", payer });
 const body = {
   dry: !live,
   swapType: "EXACT_INPUT",
@@ -19,7 +21,7 @@ const body = {
   destinationAsset: USDC_ASSET,
   amount,
   refundTo,
-  refundType: "ORIGIN_CHAIN",
+  refundType,
   recipient: accountId,
   recipientType: "DESTINATION_CHAIN",
   customRecipientMsg: msg,

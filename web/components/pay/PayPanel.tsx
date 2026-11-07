@@ -126,7 +126,6 @@ export function PayPanel({
         {NETWORK === "testnet" && <li>Test mode: this mints free test USDC to you and pays it in one step.</li>}
         <li>No wallet and no gas: you sign in this browser and Presafe&apos;s relayer pays the fees.</li>
         <li>The business receives the money immediately. Only its bond stands behind your claim.</li>
-        <li>Paying from another chain (NEAR Intents) works on mainnet only; it is coming next.</li>
       </ul>
     </div>
   );

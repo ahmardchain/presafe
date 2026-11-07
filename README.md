@@ -1,6 +1,6 @@
 # Presafe
 
-> **Status: in development for NEAR HACKATHON (track `realworld`).** Sections marked _TBD_ are filled in as each part ships. Nothing below claims a feature that is not built yet.
+> **Status: live on NEAR testnet for NEAR HACKATHON (track `realworld`).** Sections marked _TBD_ are not built yet. Nothing below claims a feature that is not built.
 
 A business that takes customers' money upfront posts a stablecoin bond on NEAR and gets a public, verifiable badge. If it does not deliver by the promised date, the customers it took money from claim from the bond, without holding gas, and they can pay in from any chain.
 
@@ -16,26 +16,31 @@ Businesses take customers' money upfront (festival and event tickets, tours, cou
 
 ## Verify in 2 minutes
 
-_TBD once the testnet contract and the badge page are live._
+Live app: **https://presafe.ahmardchain.workers.dev** (NEAR testnet, contract [`presafe-app.testnet`](https://testnet.nearblocks.io/address/presafe-app.testnet)).
 
-1. **No wallet needed.** Open the badge page of the demo business: `<URL TBD>/b/<account TBD>` → you see the bond size, the coverage ratio per obligation, and the claims paid.
-2. **Contract state.** Run `<view command TBD>` → you see the same numbers straight from the chain.
-3. **Transactions.** See the table below.
+1. **No wallet needed.** Open [the demo business's badge page](https://presafe.ahmardchain.workers.dev/b/lagos-sound-fest.testnet) → you see its bond, coverage per obligation and claims paid, read live from the contract. The embeddable badge is at [`/b/lagos-sound-fest.testnet/badge.svg`](https://presafe.ahmardchain.workers.dev/b/lagos-sound-fest.testnet/badge.svg).
+2. **Pay with protection.** Open [`/pay/8`](https://presafe.ahmardchain.workers.dev/pay/8) (an obligation open until Dec 20, 2026) and tap **Pay 2.00 test USDC** → "You're covered." No wallet and no gas: the browser signs, the relayer submits, and test USDC is minted for you.
+3. **See a default and a gasless claim end to end (about 5 minutes).** Go to [`/business`](https://presafe.ahmardchain.workers.dev/business) → **Start demo business** → register → **Get 10 test USDC** → **Fund bond** → create an obligation with **In 3 min (demo)** → **Copy pay link**, open it, pay. After about 4 minutes open [`/claims`](https://presafe.ahmardchain.workers.dev/claims) → **Deadline missed: open claims** → **Claim** → "Paid back".
+4. **Check the chain.** `curl -s https://test.rpc.fastnear.com -H 'content-type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"query","params":{"request_type":"call_function","finality":"final","account_id":"presafe-app.testnet","method_name":"get_business","args_base64":"eyJhY2NvdW50X2lkIjoibGFnb3Mtc291bmQtZmVzdC50ZXN0bmV0In0="}}' | python3 -c "import json,sys; print(bytes(json.load(sys.stdin)['result']['result']).decode())"` prints the business's bond, coverage and claims paid, the same numbers as the badge page.
+
+Transactions from a run on the live app on 2026-11-07 (obligation #7, customer `3492d146…`):
 
 | Step | Network | Transaction |
 | --- | --- | --- |
-| Business funds bond | testnet | _TBD_ |
-| Customer pays with protection | testnet | _TBD_ |
-| Default triggered | testnet | _TBD_ |
-| Gasless claim (meta transaction) | testnet | _TBD_ |
-| Any-chain pay-in through 1Click | mainnet | _TBD_ |
+| Business funds bond | testnet | [4fd2Pii…](https://testnet.nearblocks.io/txns/4fd2PiinZUwqJTPyRucysyWKS9dBQE6ZowiCGMVGgjor) |
+| Customer pays with protection (relayed) | testnet | [BxXLLBy…](https://testnet.nearblocks.io/txns/BxXLLByZbBsSH8uGNM1TVXRJoMfUfnCV7pRxe1bhBDCh) |
+| Default triggered after the deadline (relayed) | testnet | [4TaLEWL…](https://testnet.nearblocks.io/txns/4TaLEWLu12rsxTqPqUNgdnNbnnpMsMBk9acKfwLSQ3KD) |
+| Gasless claim (meta transaction) | testnet | [5RpNDfE…](https://testnet.nearblocks.io/txns/5RpNDfE2D8wjtvPQyh6GQrLJGqKQ789UzbXwXENKYGv) |
+| Any-chain pay-in through 1Click (spike: 1.00 USDC on Base delivered with `customRecipientMsg`) | mainnet | [94gPxba…](https://nearblocks.io/txns/94gPxbaXa8cs4noBg1XvRNZF84TSi1HDJ3G1UVziCCSg) |
+
+After the claim, the customer held 2.00 test USDC and their NEAR balance was still the 0.01 they were onboarded with.
 
 ## How NEAR is used
 
 | NEAR feature | What Presafe does with it |
 | --- | --- |
 | NEP-141 fungible tokens (USDC) | Bonds and payments are stablecoin transfers into the Presafe contract through `ft_transfer_call`. Mainnet USDC is `17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1`; testnet uses a mock NEP-141 token. |
-| NEAR Intents (1Click API) | A customer pays, or a business funds its bond, from another chain and token. 1Click swaps it into USDC on NEAR. _Delivery design: see [Spike: 1Click into the contract](#spike-1click-into-the-contract)._ |
+| NEAR Intents (1Click API) | A customer pays from another chain (USDC on Base, Arbitrum, Ethereum or Solana, or USDT on NEAR). 1Click swaps it to USDC on NEAR and delivers it into Presafe with `customRecipientMsg`, so it lands as a covered receipt in one step. Verified on mainnet with a real 1.00 USDC payment from Base (see [the spike](#spike-1click-into-the-contract-mainnet-result)). On the testnet demo the pay page shows a live `dry: true` quote for the chosen chain, since Intents has no testnet. |
 | Meta transactions (NEP-366) | Customers pay (testnet), dispute, claim and trigger default by signing a delegate action in the browser; Presafe's self-hosted relayer submits it and pays the gas. The relayer only accepts `claim`, `dispute` and `trigger_default` on the Presafe contract, and `ft_transfer_call` into Presafe (plus the capped test-token `mint` on testnet). |
 | Named accounts | The badge identity is a readable account such as `<business>.near`, shown on the badge page and in the embeddable SVG. |
 
@@ -179,9 +184,22 @@ This builds both contracts, runs the unit tests (34 for Presafe, 3 for the mock 
 
 The sandbox node requires an open-files limit of 65535. Where a container caps it lower, `run-tests.sh` preloads a small test-only shim ([`fdlimit_shim.c`](contract/integration-tests/fdlimit-shim/fdlimit_shim.c)); on a normal machine it is not used.
 
-## Spike: 1Click into the contract
+## Spike: 1Click into the contract (mainnet result)
 
-_In progress._ The question: can USDC delivered by 1Click arrive in the Presafe contract already tied to a specific obligation? The 1Click quote API has an experimental `customRecipientMsg` field that delivers through `ft_transfer_call` instead of `ft_transfer`. The spike tests it with a $1 mainnet payment into a throwaway contract that only records what it receives. Results and the chosen design go here.
+Question: can USDC delivered by NEAR Intents 1Click arrive in a contract already tied to a specific obligation and customer?
+
+On 2026-11-07 we paid 1.00 USDC on Base through a 1Click quote with `customRecipientMsg` set, delivering to a throwaway recorder contract on mainnet ([`spike/recorder`](spike/recorder/src/lib.rs)) that logs what `ft_on_transfer` receives:
+
+| Field seen by `ft_on_transfer` | Value |
+| --- | --- |
+| `msg` | `{"action":"pay","obligation_id":"spike-1","payer":"ahmardchain.near"}`, delivered unchanged |
+| `sender_id` | `intents.near` (not the customer) |
+| `predecessor_id` | `17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1` (native USDC) |
+| `amount` | 999798 (0.999798 USDC; nothing refunded) |
+
+Deposit to `SUCCESS` took about 30 seconds. Base deposit `0x8c908afcb96b1267cd78a4092cd4f23863fcb6b54ed38486f5e6794041536af3`; NEAR delivery [`94gPxba…`](https://nearblocks.io/txns/94gPxbaXa8cs4noBg1XvRNZF84TSi1HDJ3G1UVziCCSg); recorder deploy [`71tuSGX…`](https://nearblocks.io/txns/71tuSGX3tthDFhKta8vZ9YKWFpzdcFLgo2sbUi7ysT6E).
+
+Design consequence: a customer on another chain pays Presafe in one step. The 1Click quote delivers USDC to the Presafe contract with `customRecipientMsg = {"action":"pay","obligation_id":N,"payer":"<customer NEAR account>"}`. Because `sender_id` is `intents.near`, the payer must be named in `msg`, which is why the contract accepts a `payer` field (see known limitations).
 
 ## Disclosures
 
@@ -199,6 +217,7 @@ _In progress._ The question: can USDC delivered by 1Click arrive in the Presafe 
 - **Arbiter trust.** A disputed delivery is settled by an arbiter account (by default one run by Presafe). Customers trust that arbiter.
 - **Non-event obligations.** The default rule is date-based. Services without a clear delivery date need a different claim rule.
 - **Coverage below 100%.** If the bond is smaller than the covered prepayments, each claim is paid pro rata and customers recover only part of their money.
+- **Rejected 1Click deliveries bounce to `intents.near`.** If Presafe rejects a 1Click delivery (for example, the obligation closed between quote and delivery), the token contract refunds `sender_id`, which is `intents.near`, not the customer. The app must only quote open obligations; holding rejected deliveries for the named payer is future work.
 - **Named payer is not verified.** When `msg` names a payer, the contract records the receipt for that account without proof that it funded the payment. Anyone can create a receipt this way, but only by paying the business real USDC, so it cannot be used to drain a bond for free; it can dilute other customers' pro-rata share if the bond is smaller than covered payments.
 - **Pro-rata dust and unclaimed reserve.** After a default, reserve that is never claimed (or rounding remainders) stays locked; there is no sweep yet.
 - **Browser-held customer keys.** Convenient and gasless, but a customer who clears browser data without backing up the key loses access to their receipts. Customers with a NEAR wallet should be able to pay from it directly (not built yet).
