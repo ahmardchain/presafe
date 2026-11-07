@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowUpRight } from "lucide-react";
 import { Ticket, Ticker } from "@/components/Ticket";
 import { explorerAccount, PRESAFE_CONTRACT, TOKEN_LABEL } from "@/lib/config";
-import { amount, coveragePct, obligationTone, statusLabel, when } from "@/lib/format";
+import { amount, coveragePct, obligationTone, statusText, when } from "@/lib/format";
 import { stubWord, summarize } from "@/lib/summary";
 
 export const dynamic = "force-dynamic";
@@ -52,14 +52,14 @@ export default async function BadgePage({ params }: { params: Promise<{ business
         </div>
         {s.obligations.length === 0 && <p className="mt-4 text-muted-foreground">No obligations yet.</p>}
         <div className="mt-6 grid gap-8 lg:grid-cols-2">
-          {s.obligations.map((o) => {
+          {[...s.obligations].reverse().map((o) => {
             const tone = obligationTone(o);
             const pct = coveragePct(o.coverage_bps);
             return (
               <div key={o.id}>
                 <Ticket
                   tone={tone}
-                  eyebrow={`Obligation #${o.id} · ${statusLabel[o.status]}`}
+                  eyebrow={`Obligation #${o.id} · ${statusText(o)}`}
                   title={o.title}
                   stubWord={stubWord[tone]}
                   fields={[

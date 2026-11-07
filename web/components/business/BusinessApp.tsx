@@ -13,7 +13,7 @@ import {
 } from "@/lib/client/business-signer";
 import { business as getBusiness, nearBalance, obligationsOf, storageOf, usdcBalance, usdcRegistered } from "@/lib/client/views";
 import { NETWORK, PRESAFE_CONTRACT, TOKEN_LABEL, USDC_CONTRACT, explorerAccount, explorerTx } from "@/lib/config";
-import { amount as fmt, coveragePct, day, statusLabel, when } from "@/lib/format";
+import { amount as fmt, coveragePct, day, statusText, when } from "@/lib/format";
 import type { Business, Obligation } from "@/lib/near";
 
 const UNIT = 1_000_000n;
@@ -178,7 +178,7 @@ export function BusinessApp() {
             <h3 className="font-heading text-[34px]">Obligations</h3>
             {s.obligations.length === 0 && <p className="mt-2 text-muted-foreground">No obligations yet. Create one below to start taking protected payments.</p>}
             <div className="mt-2 divide-y divide-rule border-y border-rule">
-              {s.obligations.map((o) => (
+              {[...s.obligations].reverse().map((o) => (
                 <ObligationRow key={o.id} o={o} busy={busy} unlocked={BigInt(s.biz!.unlocked)} run={run} />
               ))}
             </div>
@@ -307,7 +307,7 @@ function ObligationRow({ o, busy, unlocked, run }: { o: Obligation; busy: string
   return (
     <div className={`grid gap-3 py-5 ${tone}`}>
       <div>
-        <div className="label">#{o.id} · <span className="text-[var(--tone)]">{statusLabel[o.status]}</span></div>
+        <div className="label">#{o.id} · <span className="text-[var(--tone)]">{statusText(o)}</span></div>
         <div className="mt-1 font-heading text-[26px] leading-tight">{o.title}</div>
         <div className="mt-1 font-mono text-[13px] text-muted-foreground">
           Deliver by {when(o.deliver_by_ns)} · {o.receipt_count} paid {fmt(o.covered_total)} · reserve {fmt(o.reserve)} · coverage {coveragePct(o.coverage_bps) ?? "—"}

@@ -22,8 +22,13 @@ export function when(ns: string): string {
 
 export type Tone = "protected" | "partial" | "claims" | "delivered" | "neutral";
 
+const nowNs = () => BigInt(Date.now()) * 1_000_000n;
+
+/** Still marked Open on chain, but the deadline and grace period have passed: anyone can trigger default. */
+export const isOverdue = (o: Obligation) => o.status === "Open" && nowNs() >= BigInt(o.default_after_ns);
+
 export function obligationTone(o: Obligation): Tone {
-  if (o.status === "Defaulted") return "claims";
+  if (o.status === "Defaulted" || isOverdue(o)) return "claims";
   if (o.status === "Delivered") return "delivered";
   if (o.coverage_bps !== null && Number(o.coverage_bps) < 10_000) return "partial";
   return "protected";
@@ -36,6 +41,10 @@ export const statusLabel: Record<Obligation["status"], string> = {
   Delivered: "Delivered",
   Defaulted: "Not delivered: claims open",
 };
+
+export function statusText(o: Obligation): string {
+  return isOverdue(o) ? "Deadline missed: claims can open" : statusLabel[o.status];
+}
 
 /** One sentence that summarises a business's protection, plus its tone. */
 export function headline(b: Business, obs: Obligation[]): { tone: Tone; text: string } {
