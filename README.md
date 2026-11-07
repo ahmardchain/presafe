@@ -372,18 +372,39 @@ From the official rules, [HACKATHON.md](https://nearhackathon.com/HACKATHON.md):
 
 ## Judging criteria alignment
 
-The rules publish no weighted rubric. They say AI screeners check reproducibility and verify features before a human jury decides (Q-017), and they give a brief for each track. This table maps those to evidence.
+How the hackathon says projects are judged ([nearhackathon.com](https://nearhackathon.com), FAQ "How will projects be judged?"):
 
-| What is judged | How Presafe meets it | Proof |
+1. **Screening:** Claude Code and Codex check that the project runs and does what the README says.
+2. **Human judges** make the decisions. The FAQ adds that "previous NEAR hackathons evaluated technical implementation, design, impact, originality and sustainability" and calls that a good guide to prepare by.
+
+### Screening: it runs and does what this README says
+
+| Check | Evidence |
+| --- | --- |
+| It runs | Live app, no wallet needed: https://presafe.ahmardchain.workers.dev. Locally: [Getting started](#getting-started). |
+| It does what the README says | Each step in [How to test it](#how-to-test-it-for-judges) says what to do and what you should see. Every claim links to a transaction, a live page or a test ([Live proof](#live-proof)). |
+| Tests | 34 contract unit tests, 3 token tests and 4 sandbox integration tests, run on every push by [GitHub Actions](https://github.com/ahmardchain/presafe/actions/workflows/contract-tests.yml). |
+| Nothing hidden | Every stand-in (test USDC, demo business, demo keys) is listed in [What's real vs. mock](#whats-real-vs-mock). |
+
+### The five criteria
+
+| Criterion | How Presafe meets it | Proof |
 | --- | --- | --- |
-| **Track fit: Real-World Money** ("something a normal company could use tomorrow") | Prepayment protection for event organizers, tour operators and custom-order makers, with USDC bonds and refunds a customer can claim without crypto knowledge. | [The problem](#the-problem), [Live app](https://presafe.ahmardchain.workers.dev) |
-| **Track hints: stablecoins** | Bonds, payments and claims are all USDC (NEP-141). | [How NEAR is used](#how-near-is-used) |
-| **Track hints: NEAR Intents** | 1Click delivers a payment from another chain straight into the contract, tied to an obligation and a customer. | [Mainnet tx](https://nearblocks.io/txns/94gPxbaXa8cs4noBg1XvRNZF84TSi1HDJ3G1UVziCCSg), [Key design decision](#key-design-decision-1click-delivers-straight-into-the-contract) |
-| **Track hints: meta transactions** | Customers pay, dispute and claim with NEP-366 delegate actions through a self-hosted relayer. | [Claim tx](https://testnet.nearblocks.io/txns/5RpNDfE2D8wjtvPQyh6GQrLJGqKQ789UzbXwXENKYGv), [`relayer.ts`](web/lib/server/relayer.ts) |
-| **Reproducibility** (Q-017) | A step-by-step judge guide, scripted testnet deploy, and contract tests run in CI on every push. | [How to test it](#how-to-test-it-for-judges), [CI](https://github.com/ahmardchain/presafe/actions/workflows/contract-tests.yml), [Getting started](#getting-started) |
-| **Feature verification** (Q-017) | Every claim links to a transaction, a live page or a test. | [Live proof](#live-proof), [What's real vs. mock](#whats-real-vs-mock) |
-| **Hosted demo is a plus** (Q-012) | Live on Cloudflare Workers, no wallet needed to try it. | https://presafe.ahmardchain.workers.dev |
-| **Only NEAR work built in the window is judged** (Q-002) | The whole project was built in the window. | [Disclosures](#disclosures), [CHANGELOG.md](CHANGELOG.md) |
+| **Technical implementation** | A Rust contract (near-sdk 5.30.1) with bonds, per-obligation reserves, payments forwarded to the business at once, disputes with a 20% threshold, arbiter resolution, date-based default and pro-rata claims. Customers act through NEP-366 meta transactions and a self-hosted, allowlisted relayer. A payment from another chain lands in the contract in one step through NEAR Intents 1Click with `customRecipientMsg`, proven on mainnet before it was designed in. | [Key design decision](#key-design-decision-1click-delivers-straight-into-the-contract), [Contract rules](#contract-rules), [CI](https://github.com/ahmardchain/presafe/actions/workflows/contract-tests.yml), [mainnet tx](https://nearblocks.io/txns/94gPxbaXa8cs4noBg1XvRNZF84TSi1HDJ3G1UVziCCSg) |
+| **Design** | Built for people who have never used crypto. A customer pays and claims with one tap: no wallet, no gas, no seed phrase. Before paying they see how much they could get back. The badge page states the business's status in one sentence, and the ticket-style interface shows bond, coverage and deadline at a glance. | [Screenshots](#screenshots), [How to test it](#how-to-test-it-for-judges) |
+| **Impact** | Prepayment loss is common and costly: in one New York case, 11 of 521 ticket buyers were refunded. Presafe is for event organizers, tour operators, course creators and custom-order makers, who keep their presale cash while their customers get protection. This is the Real-World Money track's brief: "something a normal company could use tomorrow". | [The problem](#the-problem), [How it works](#how-it-works) |
+| **Originality** | Related bonded-payment projects protect AI agents. Presafe protects human customers of real-world businesses. It uses a date-based trigger instead of an oracle or a per-call verdict, a public badge per business, and pay-in from other chains. A bond, not escrow: the business keeps the money. | [Related work](#related-work) |
+| **Sustainability** | Customers' protection does not depend on Presafe staying online. The bond sits in the contract, anyone can trigger a default, and a receipt holder can claim directly; the relayer only removes gas. Each business pays its own contract storage. The same contract works with mainnet USDC, and the code is MIT-licensed. Not built yet: a fee model and a mainnet deployment (see [Roadmap](#roadmap)). | [Contract rules](#contract-rules), [Known limitations](#known-limitations), [Roadmap](#roadmap) |
+
+### Track fit: Real-World Money
+
+The track brief says "Build payroll, invoicing, remittances, merchant payments and stablecoin rails for real businesses", and its hints are stablecoins, NEAR Intents and meta transactions. Presafe uses all three:
+
+| Hint | In Presafe | Proof |
+| --- | --- | --- |
+| Stablecoins | Bonds, payments and claims are all USDC (NEP-141). | [How NEAR is used](#how-near-is-used) |
+| NEAR Intents | 1Click delivers a payment from another chain straight into the contract, tied to an obligation and a customer. | [Mainnet tx](https://nearblocks.io/txns/94gPxbaXa8cs4noBg1XvRNZF84TSi1HDJ3G1UVziCCSg) |
+| Meta transactions | Customers pay, dispute and claim with NEP-366 delegate actions; the relayer pays the gas. | [Claim tx](https://testnet.nearblocks.io/txns/5RpNDfE2D8wjtvPQyh6GQrLJGqKQ789UzbXwXENKYGv), [`relayer.ts`](web/lib/server/relayer.ts) |
 
 ## Related work
 
@@ -587,6 +608,7 @@ Not built yet:
 - Claim rules for services without a single delivery date, such as milestones or a per-order deadline.
 - A sweep for unclaimed reserve after a claim window closes.
 - A mainnet deployment with the operator's own arbiter and relayer accounts, and stronger relayer abuse limits.
+- A fee model, for example a small fee on covered payments or on bond deposits, so the relayer and hosting pay for themselves.
 
 ## Builder
 
