@@ -305,7 +305,7 @@ function ObligationRow({ o, busy, unlocked, run }: { o: Obligation; busy: string
   const id = { obligation_id: o.id };
 
   return (
-    <div className={`grid gap-4 py-5 md:grid-cols-[1fr_auto] ${tone}`}>
+    <div className={`grid gap-3 py-5 ${tone}`}>
       <div>
         <div className="label">#{o.id} · <span className="text-[var(--tone)]">{statusLabel[o.status]}</span></div>
         <div className="mt-1 font-heading text-[26px] leading-tight">{o.title}</div>
@@ -315,7 +315,7 @@ function ObligationRow({ o, busy, unlocked, run }: { o: Obligation; busy: string
           {o.status === "Defaulted" && <> · {fmt(o.claimed_total)} claimed</>}
         </div>
       </div>
-      <div className="flex flex-wrap items-center gap-2 md:justify-end">
+      <div className="flex flex-wrap items-center gap-2">
         {o.status === "Open" && (
           <button
             onClick={() => navigator.clipboard.writeText(payLink).then(() => setCopied(true)).catch(() => {})}
