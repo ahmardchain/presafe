@@ -277,7 +277,7 @@ From the official rules, [HACKATHON.md](https://nearhackathon.com/HACKATHON.md):
 | LICENSE file (Q-014) | ✅ | [MIT](LICENSE) |
 | Libraries, templates and AI code listed (Q-005) | ✅ | [Disclosures](#disclosures) |
 | Earlier code disclosed (Q-001, Q-002, Q-004) | ✅ | All code was written in the window; nothing reused ([Disclosures](#disclosures)) |
-| Other entries named if the builder has more than one (Q-015) | ✅ | Presafe is the only entry |
+| Other entries named if the builder has more than one (Q-015) | ✅ | Second entry by the same author: [Surety](https://github.com/ahmardchain/surety) ([Disclosures](#disclosures)) |
 | Testnet-only is allowed; mainnet where the integration is mainnet-only (Q-007, Q-010) | ✅ | Testnet app, plus the mainnet 1Click proof ([Key design decision](#key-design-decision-1click-delivers-straight-into-the-contract)) |
 | No secrets in the repository | ✅ | Keys live in git-ignored `.env.local`, `.dev.vars` and `scripts/state/`; [`.env.example`](.env.example) |
 
@@ -569,7 +569,7 @@ Supporting documents: [JUDGES.md](JUDGES.md) (run-through for judges), [SUBMISSI
 ## Disclosures
 
 - **All code in this repository was written during NEAR HACKATHON**, after the window opened on 2026-10-19. No code is reused from the author's earlier projects, including the "Climb" escrow contract on Arc.
-- **Other hackathon entries:** Presafe is the author's only NEAR HACKATHON entry.
+- **Other hackathon entries:** the author's second, independent NEAR HACKATHON entry is **Surety**: <https://github.com/ahmardchain/surety>, member-guaranteed loans on top of a Sputnik DAO (Social Money track). Presafe and Surety share no code and are submitted separately.
 - **AI assistance:** built with Claude Code. The demo video's narration is AI-generated.
 - **Libraries, templates and assets** (all versions pinned):
 
